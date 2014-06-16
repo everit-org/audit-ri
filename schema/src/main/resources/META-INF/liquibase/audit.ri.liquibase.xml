@@ -1,0 +1,92 @@
+<!--
+
+    This file is part of org.everit.osgi.audit.ri.schema.
+
+    org.everit.osgi.audit.ri.schema is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    org.everit.osgi.audit.ri.schema is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with org.everit.osgi.audit.ri.schema.  If not, see <http://www.gnu.org/licenses/>.
+
+-->
+<databaseChangeLog objectQuotingStrategy="QUOTE_ALL_OBJECTS" logicalFilePath="org.everit.osgi.authentication.simple" xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+        
+        <include file="eosgi:org.everit.osgi.resource" />
+        
+        <changeSet id="1.0.0" author="everit">
+			<createTable name="AUDIT_APPLICATION">
+				<column name="APPLICATION_ID" type="BIGINT" autoIncrement="true">
+					<constraints primaryKey="true" nullable="false" />
+				</column>
+				<column name="APPLICATION_NAME" type="VARCHAR(255)" unique="true" />
+				<column name="RESOURCE_ID" type="BIGINT" />
+			</createTable>        
+			
+			<addForeignKeyConstraint constraintName="FK_APPLICATION_RESOURCE_ID"
+				baseTableName="AUDIT_APPLICATION" baseColumnNames="RESOURCE_ID"
+				referencedTable="res_resource" referencedColumnNames="resource_id" />
+				
+			<createTable name="AUDIT_EVENT_TYPE">
+				<column name="EVENT_TYPE_ID" type="BIGINT" autoIncrement="true">
+					<constraints primaryKey="true" nullable="false" />
+				</column>
+				<column name="NAME" type="VARCHAR(255)" unique="true" />
+				<column name="RESOURCE_ID" type="BIGINT" />
+				<column name="APPLICATION_ID" type="BIGINT" />
+			</createTable>
+			
+			<addForeignKeyConstraint constraintName="FK_EVENT_TYPE_RESOURCE_ID"
+				baseTableName="AUDIT_EVENT_TYPE" baseColumnNames="RESOURCE_ID"
+				referencedTable="res_resource" referencedColumnNames="resource_id" />
+				
+			<addForeignKeyConstraint constraintName="FK_EVENT_TYPE_APPLICATION_ID"
+				baseTableName="AUDIT_EVENT_TYPE" baseColumnNames="APPLICATION_ID"
+				referencedTable="AUDIT_APPLICATION" referencedColumnNames="APPLICATION_ID" />
+				
+			<createTable name="AUDIT_EVENT">
+				<column name="EVENT_ID" type="BIGINT">
+					<constraints primaryKey="true" nullable="false" />
+				</column>
+				<column name="SAVE_TIMESTAMP" type="TIMESTAMP" />
+				<column name="RESOURCE_ID" type="BIGINT" />
+				<column name="EVENT_TYPE_ID" type="BIGINT" />
+			</createTable>
+			
+			<addForeignKeyConstraint constraintName="FK_EVENT_RESOURCE_ID"
+				baseTableName="AUDIT_EVENT" baseColumnNames="RESOURCE_ID"
+				referencedTable="res_resource" referencedColumnNames="resource_id"/>
+				
+			<addForeignKeyConstraint constraintName="FK_EVENT_EVENT_TYPE_ID"
+				baseTableName="AUDIT_EVENT" baseColumnNames="EVENT_TYPE_ID"
+				referencedTable="AUDIT_EVENT_TYPE" referencedColumnNames="EVENT_TYPE_ID"/>
+				
+			<createTable name="AUDIT_EVENT_DATA">
+				<column name="EVENT_DATA_ID" type="BIGINT">
+					<constraints primaryKey="true" nullable="false" />
+				</column>
+				<column name="EVENT_ID" type="BIGINT" nullable="false" />
+				<column name="EVENT_DATA_NAME" type="VARCHAR(255)" nullable="false" />
+				<column name="EVENT_DATA_TYPE" type="???" nullable="false" />
+				<column name="STRING_VALUE" type="VARCHAR(2000)" />
+				<column name="NUMBER_VALUE" type="DOUBLE" />
+				<column name="BINARY_VALUE" type="BLOB" />
+				<column name="TEXT_VALUE" type="TEXT" />
+				<column name="TIMESTAMP_VALUE" type="TIMESTAMP" />
+			</createTable>
+			
+			<addForeignKeyConstraint constraintName="FK_EVENT_DATA_EVENT_ID"
+				baseTableName="AUDIT_EVENT_DATA" baseColumnNames="EVENT_ID"
+				referencedTable="AUDIT_EVENT" referencedColumnNames="EVENT_ID" />
+				
+        </changeSet>
+</databaseChangeLog>
