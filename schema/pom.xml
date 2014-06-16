@@ -59,7 +59,7 @@
 							liquibase.schema;filter:=(name=org.everit.osgi.resource)
 						</Require-Capability>
 						<Provide-Capability>
-							liquibase.schema;name=org.everit.osgi.audit.ri;resource=/META-INF/liquibase/audit.ri.liquibase.xml;lqmg.config.resource=/META-INF/liquibase/audit.ri.lqmg.xml
+							liquibase.schema;name=org.everit.osgi.audit.ri.schema;resource=/META-INF/liquibase/audit.ri.liquibase.xml;lqmg.config.resource=/META-INF/liquibase/audit.ri.lqmg.xml
 						</Provide-Capability>
 					</instructions>
 				</configuration>
@@ -69,7 +69,7 @@
 				<artifactId>lqmg-maven-plugin</artifactId>
 				<version>2.0.0</version>
 				<configuration>
-					<schema>org.everit.osgi.audit.ri</schema>
+					<schema>org.everit.osgi.audit.ri.schema</schema>
 					<packages>org.everit.osgi.audit.ri.schema.qdsl</packages>
 				</configuration>
 			</plugin>
@@ -115,6 +115,11 @@
 			<groupId>org.apache.servicemix.bundles</groupId>
 			<artifactId>org.apache.servicemix.bundles.javax-inject</artifactId>
 			<version>1_2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.7.5</version>
 		</dependency>
 	</dependencies>
 	
