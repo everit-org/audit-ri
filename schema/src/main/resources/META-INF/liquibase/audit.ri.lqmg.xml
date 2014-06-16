@@ -19,10 +19,6 @@
 -->
 <lqmg xmlns="http://everit.org/lqmg" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" defaultPackage="org.everit.osgi.audit.ri.schema.qdsl">
 	<namingRules>
-		<!-- <classNameRule>
-			<entity>authc_simple_subject</entity>
-			<class>SimpleSubject</class>
-		</classNameRule> -->
 		<classNameRule>
 			<entity>AUDIT_APPLICATION</entity>
 			<class>Application</class>
