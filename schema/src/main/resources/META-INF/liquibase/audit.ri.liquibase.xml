@@ -28,7 +28,9 @@
 				<column name="APPLICATION_ID" type="BIGINT" autoIncrement="true">
 					<constraints primaryKey="true" nullable="false" />
 				</column>
-				<column name="APPLICATION_NAME" type="VARCHAR(255)" />
+				<column name="APPLICATION_NAME" type="VARCHAR(255)">
+					<constraints  unique="true" />
+				</column>
 				<column name="RESOURCE_ID" type="BIGINT">
 					<constraints  unique="true" />
 				</column>

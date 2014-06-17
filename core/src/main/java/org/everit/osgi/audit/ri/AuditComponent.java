@@ -16,6 +16,8 @@
  */
 package org.everit.osgi.audit.ri;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,19 +34,25 @@ import org.everit.osgi.audit.api.dto.Application;
 import org.everit.osgi.audit.api.dto.EventType;
 import org.everit.osgi.audit.api.dto.EventUi;
 import org.everit.osgi.audit.api.dto.FieldWithType;
+import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.resource.api.ResourceService;
+import org.everit.osgi.transaction.helper.api.Callback;
+import org.everit.osgi.transaction.helper.api.TransactionHelper;
 
+import com.mysema.query.sql.SQLQuery;
 import com.mysema.query.sql.SQLTemplates;
+import com.mysema.query.sql.dml.SQLInsertClause;
+import com.mysema.query.types.ConstructorExpression;
 
 @Component(name = "AuditComponent",
-immediate = true,
-metatype = true,
-configurationFactory = true,
-policy = ConfigurationPolicy.REQUIRE)
+        immediate = true,
+        metatype = true,
+        configurationFactory = true,
+        policy = ConfigurationPolicy.REQUIRE)
 @Properties({
-    @Property(name = "sqlTemplates.target"),
-    @Property(name = "dataSource.target"),
-    @Property(name = "resourceService.target")
+        @Property(name = "sqlTemplates.target"),
+        @Property(name = "dataSource.target"),
+        @Property(name = "resourceService.target")
 })
 @Service
 public class AuditComponent implements AuditService {
@@ -58,6 +66,9 @@ public class AuditComponent implements AuditService {
     @Reference
     private ResourceService resourceService;
 
+    @Reference
+    private TransactionHelper transactionHelper;
+
     public void bindDataSource(final DataSource dataSource) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource cannot be null");
     }
@@ -70,6 +81,10 @@ public class AuditComponent implements AuditService {
         this.sqlTemplates = Objects.requireNonNull(sqlTemplates, "sqlTemplates cannot be null");
     }
 
+    public void bindTransactionHelper(final TransactionHelper transactionHelper) {
+        this.transactionHelper = Objects.requireNonNull(transactionHelper, "transactionHelper cannot be null");
+    }
+
     @Override
     public void createApplication(final String appName) {
         Objects.requireNonNull(appName, "appName cannot be null");
@@ -79,14 +94,40 @@ public class AuditComponent implements AuditService {
 
     @Override
     public void createApplication(final String appName, final Long resourceId) {
-        // TODO Auto-generated method stub
+        Objects.requireNonNull(appName, "appName cannot be null");
+        Objects.requireNonNull(resourceId, "resourceId cannot be null");
+        transactionHelper.required(new Callback<Void>() {
 
+            @Override
+            public Void execute() {
+                try (Connection conn = dataSource.getConnection()) {
+                    QApplication app = QApplication.auditApplication;
+                    new SQLInsertClause(conn, sqlTemplates, app)
+                    .set(app.resourceId, resourceId)
+                    .set(app.applicationName, appName)
+                    .execute();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+                return null;
+            }
+        });
     }
 
     @Override
     public Application findAppByName(final String appName) {
-        // TODO Auto-generated method stub
-        return null;
+        try (Connection conn = dataSource.getConnection()) {
+            QApplication app = QApplication.auditApplication;
+            return new SQLQuery(conn, sqlTemplates)
+                    .from(app)
+                    .where(app.applicationName.eq(appName))
+                    .uniqueResult(ConstructorExpression.create(Application.class,
+                    app.applicationId,
+                    app.applicationName,
+                    app.resourceId));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
