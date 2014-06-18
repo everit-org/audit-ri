@@ -18,6 +18,7 @@ package org.everit.osgi.audit.ri.tests;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Objects;
 
 import javax.sql.DataSource;
@@ -30,7 +31,9 @@ import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.everit.osgi.audit.api.AuditService;
 import org.everit.osgi.audit.api.dto.Application;
+import org.everit.osgi.audit.api.dto.EventType;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
+import org.everit.osgi.audit.ri.schema.qdsl.QEventType;
 import org.everit.osgi.dev.testrunner.TestDuringDevelopment;
 import org.junit.After;
 import org.junit.Assert;
@@ -44,20 +47,22 @@ import com.mysema.query.sql.dml.SQLDeleteClause;
 import com.mysema.query.types.ConstructorExpression;
 
 @Component(name = "AuditComponentTest",
-        immediate = true,
-        metatype = true,
-        configurationFactory = true,
-        policy = ConfigurationPolicy.REQUIRE)
+immediate = true,
+metatype = true,
+configurationFactory = true,
+policy = ConfigurationPolicy.REQUIRE)
 @Service(AuditComponentTest.class)
 @Properties({
-        @Property(name = "eosgi.testEngine", value = "junit4"),
-        @Property(name = "eosgi.testId", value = "auditTest"),
-        @Property(name = "auditComponent.target"),
-        @Property(name = "dataSource.target"),
-        @Property(name = "sqlTemplates.target")
+    @Property(name = "eosgi.testEngine", value = "junit4"),
+    @Property(name = "eosgi.testId", value = "auditTest"),
+    @Property(name = "auditComponent.target"),
+    @Property(name = "dataSource.target"),
+    @Property(name = "sqlTemplates.target")
 })
 @TestDuringDevelopment
 public class AuditComponentTest {
+
+    private static final String APPNAME = "appname";
 
     @Reference
     private DataSource dataSource;
@@ -85,6 +90,7 @@ public class AuditComponentTest {
     @After
     public void cleanupDatabase() {
         try {
+            new SQLDeleteClause(conn, sqlTemplates, QEventType.auditEventType).execute();
             new SQLDeleteClause(conn, sqlTemplates, QApplication.auditApplication).execute();
             conn.close();
         } catch (SQLException e) {
@@ -95,8 +101,8 @@ public class AuditComponentTest {
     @Test(expected = QueryException.class)
     @TestDuringDevelopment
     public void createApplicationConstraintViolation() {
-        auditComponent.createApplication("appname");
-        auditComponent.createApplication("appname");
+        createDefaultApp();
+        createDefaultApp();
     }
 
     @Test(expected = NullPointerException.class)
@@ -108,25 +114,158 @@ public class AuditComponentTest {
     @Test
     @TestDuringDevelopment
     public void createApplicationSuccess() {
-        auditComponent.createApplication("appname");
+        createDefaultApp();
         QApplication app = QApplication.auditApplication;
         Application result = new SQLQuery(conn, sqlTemplates)
-                .from(app)
-                .where(app.applicationName.eq("appname"))
-                .uniqueResult(ConstructorExpression.create(Application.class,
-                        app.applicationId,
-                        app.applicationName,
-                        app.resourceId));
-        Assert.assertEquals("appname", result.getAppName());
+        .from(app)
+        .where(app.applicationName.eq(APPNAME))
+        .uniqueResult(ConstructorExpression.create(Application.class,
+                app.applicationId,
+                app.applicationName,
+                app.resourceId));
+        Assert.assertEquals(APPNAME, result.getAppName());
         Assert.assertNotNull(result.getResourceId());
+    }
+
+    private Application createDefaultApp() {
+        return auditComponent.createApplication(APPNAME);
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void createEventType() {
+        Application app = createDefaultApp();
+        EventType actual = auditComponent.getOrCreateEventType(APPNAME, "login");
+        Assert.assertNotNull(actual);
+        Assert.assertEquals("login", actual.getName());
+        Assert.assertEquals(app.getApplicationId(), actual.getApplicationId());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @TestDuringDevelopment
+    public void createEventTypeNonexistentApp() {
+        auditComponent.getOrCreateEventType("nonexistent", "login");
+    }
+
+    @Test(expected = NullPointerException.class)
+    @TestDuringDevelopment
+    public void findAppByNameFilure() {
+        auditComponent.findAppByName(null);
     }
 
     @Test
     @TestDuringDevelopment
     public void findAppByNameSuccess() {
-        auditComponent.createApplication("appname");
-        Application actual = auditComponent.findAppByName("appname");
+        createDefaultApp();
+        Application actual = auditComponent.findAppByName(APPNAME);
         Assert.assertNotNull(actual);
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void getApplications() {
+        List<Application> actual = auditComponent.getApplications();
+        Assert.assertEquals(0, actual.size());
+        auditComponent.createApplication("app1");
+        auditComponent.createApplication("app2");
+        actual = auditComponent.getApplications();
+        Assert.assertEquals(2, actual.size());
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void getEventType() {
+        createDefaultApp();
+        EventType firstEvtType = auditComponent.getOrCreateEventType(APPNAME, "login");
+        EventType secondEvtType = auditComponent.getOrCreateEventType(APPNAME, "login");
+        Assert.assertEquals(firstEvtType.getId(), secondEvtType.getId());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @TestDuringDevelopment
+    public void getEventTypeByNameForApplicationFail() {
+        createDefaultApp();
+        auditComponent.getEventTypeByNameForApplication(0L, "nonexistent");
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void getEventTypeByNameForApplicationSuccess() {
+        Application app = auditComponent.createApplication(APPNAME);
+        auditComponent.getOrCreateEventType(APPNAME, "login");
+        auditComponent.getOrCreateEventType(APPNAME, "logout");
+        EventType actual = auditComponent.getEventTypeByNameForApplication(app.getApplicationId(), "login");
+        Assert.assertNotNull(actual);
+        Assert.assertEquals(app.getApplicationId(), actual.getApplicationId());
+        Assert.assertEquals("login", actual.getName());
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void getEventTypesByApplication() {
+        Application app = auditComponent.createApplication(APPNAME);
+        auditComponent.getOrCreateEventType(APPNAME, "login");
+        auditComponent.getOrCreateEventType(APPNAME, "logout");
+        List<EventType> events = auditComponent.getEventTypesByApplication(app.getApplicationId());
+        Assert.assertNotNull(events);
+        Assert.assertEquals(2, events.size());
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void getOrCreateApplication() {
+        Application newApp = auditComponent.getOrCreateApplication(APPNAME);
+        Assert.assertNotNull(newApp);
+        Application existingApp = auditComponent.getOrCreateApplication(APPNAME);
+        Assert.assertNotNull(existingApp);
+        Assert.assertEquals(newApp.getApplicationId(), existingApp.getApplicationId());
+    }
+
+    @Test(expected = NullPointerException.class)
+    @TestDuringDevelopment
+    public void getOrCreateEventTypeNullAppName() {
+        auditComponent.getOrCreateEventType(null, null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    @TestDuringDevelopment
+    public void getOrCreateEventTypeNullEventName() {
+        auditComponent.getOrCreateEventType(APPNAME, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @TestDuringDevelopment
+    public void getOrCreateEventTypesForAppNonexistentApplication() {
+        auditComponent.getOrCreateEventTypes("nonexistent", new String[] {});
+    }
+
+    @Test(expected = NullPointerException.class)
+    @TestDuringDevelopment
+    public void getOrCreateEventTypesForAppNullAppName() {
+        auditComponent.getOrCreateEventTypes(null, null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    @TestDuringDevelopment
+    public void getOrCreateEventTypesForAppNullEventTypeNames() {
+        auditComponent.getOrCreateEventTypes(APPNAME, null);
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void getOrCreateEventTypesForAppSuccess() {
+        Application app = auditComponent.createApplication(APPNAME);
+        auditComponent.getOrCreateEventType(APPNAME, "login");
+        auditComponent.getOrCreateEventType(APPNAME, "logout");
+        auditComponent.getOrCreateEventTypes(APPNAME, new String[] { "addComment", "balanceUpdate", "viewProduct" });
+        List<EventType> actual = auditComponent.getEventTypesByApplication(app.getApplicationId());
+        Assert.assertEquals(5, actual.size());
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void notFindAppByName() {
+        Assert.assertNull(auditComponent.findAppByName("nonexistent"));
     }
 
     @Before
@@ -137,4 +276,5 @@ public class AuditComponentTest {
             throw new RuntimeException(e);
         }
     }
+
 }
