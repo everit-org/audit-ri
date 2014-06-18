@@ -46,14 +46,14 @@ import com.mysema.query.sql.dml.SQLInsertClause;
 import com.mysema.query.types.ConstructorExpression;
 
 @Component(name = "AuditComponent",
-        immediate = true,
-        metatype = true,
-        configurationFactory = true,
-        policy = ConfigurationPolicy.REQUIRE)
+immediate = true,
+metatype = true,
+configurationFactory = true,
+policy = ConfigurationPolicy.REQUIRE)
 @Properties({
-        @Property(name = "sqlTemplates.target"),
-        @Property(name = "dataSource.target"),
-        @Property(name = "resourceService.target")
+    @Property(name = "sqlTemplates.target"),
+    @Property(name = "dataSource.target"),
+    @Property(name = "resourceService.target")
 })
 @Service
 public class AuditComponent implements AuditService {
@@ -88,26 +88,29 @@ public class AuditComponent implements AuditService {
 
     @Override
     public Application createApplication(final String appName) {
-        Objects.requireNonNull(appName, "appName cannot be null");
-        long resourceId = resourceService.createResource();
-        return createApplication(appName, resourceId);
+        return createApplication(appName, null);
     }
 
     @Override
     public Application createApplication(final String appName, final Long resourceId) {
         Objects.requireNonNull(appName, "appName cannot be null");
-        Objects.requireNonNull(resourceId, "resourceId cannot be null");
         return transactionHelper.required(new Callback<Application>() {
 
             @Override
             public Application execute() {
                 try (Connection conn = dataSource.getConnection()) {
+                    Long insertedResourceId;
+                    if (resourceId == null) {
+                        insertedResourceId = resourceService.createResource();
+                    } else {
+                        insertedResourceId = resourceId;
+                    }
                     QApplication app = QApplication.auditApplication;
                     Long appId = new SQLInsertClause(conn, sqlTemplates, app)
-                            .set(app.resourceId, resourceId)
-                            .set(app.applicationName, appName)
-                            .executeWithKey(app.applicationId);
-                    return new Application(appId, appName, resourceId);
+                    .set(app.resourceId, insertedResourceId)
+                    .set(app.applicationName, appName)
+                    .executeWithKey(app.applicationId);
+                    return new Application(appId, appName, insertedResourceId);
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
@@ -120,10 +123,10 @@ public class AuditComponent implements AuditService {
             Long resourceId = resourceService.createResource();
             QEventType evtType = QEventType.auditEventType;
             Long eventTypeId = new SQLInsertClause(conn, sqlTemplates, evtType)
-            .set(evtType.name, eventTypeName)
-            .set(evtType.applicationId, app.getApplicationId())
-            .set(evtType.resourceId, resourceId)
-            .executeWithKey(evtType.eventTypeId);
+                    .set(evtType.name, eventTypeName)
+                    .set(evtType.applicationId, app.getApplicationId())
+                    .set(evtType.resourceId, resourceId)
+                    .executeWithKey(evtType.eventTypeId);
             return new EventType(eventTypeId, eventTypeName, app.getApplicationId());
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -136,12 +139,12 @@ public class AuditComponent implements AuditService {
         try (Connection conn = dataSource.getConnection()) {
             QApplication app = QApplication.auditApplication;
             return new SQLQuery(conn, sqlTemplates)
-                    .from(app)
-                    .where(app.applicationName.eq(appName))
-                    .uniqueResult(ConstructorExpression.create(Application.class,
-                            app.applicationId,
-                            app.applicationName,
-                            app.resourceId));
+            .from(app)
+            .where(app.applicationName.eq(appName))
+            .uniqueResult(ConstructorExpression.create(Application.class,
+                    app.applicationId,
+                    app.applicationName,
+                    app.resourceId));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -151,26 +154,26 @@ public class AuditComponent implements AuditService {
         try (Connection conn = dataSource.getConnection()) {
             QApplication app = QApplication.auditApplication;
             return new SQLQuery(conn, sqlTemplates)
-            .from(app)
-            .where(app.applicationName.eq(applicationName))
-            .uniqueResult(ConstructorExpression.create(Application.class, app.applicationId,
-                            app.applicationName,
-                            app.resourceId));
+                    .from(app)
+                    .where(app.applicationName.eq(applicationName))
+                    .uniqueResult(ConstructorExpression.create(Application.class, app.applicationId,
+                    app.applicationName,
+                    app.resourceId));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private EventType findEventType(final Long applicationId, final String eventTypeName) {
+    private EventType findEventType(final long applicationId, final String eventTypeName) {
         try (Connection conn = dataSource.getConnection()) {
             QEventType evtType = QEventType.auditEventType;
             return new SQLQuery(conn, sqlTemplates)
-            .from(evtType)
-            .where(evtType.name.eq(eventTypeName).and(evtType.applicationId.eq(applicationId)))
-            .uniqueResult(ConstructorExpression.create(EventType.class,
-                    evtType.eventTypeId,
-                    evtType.name,
-                    evtType.applicationId));
+                    .from(evtType)
+                    .where(evtType.name.eq(eventTypeName).and(evtType.applicationId.eq(applicationId)))
+                    .uniqueResult(ConstructorExpression.create(EventType.class,
+                            evtType.eventTypeId,
+                            evtType.name,
+                            evtType.applicationId));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -181,11 +184,11 @@ public class AuditComponent implements AuditService {
         try (Connection conn = dataSource.getConnection()) {
             QApplication app = QApplication.auditApplication;
             return new SQLQuery(conn, sqlTemplates)
-                    .from(app)
-                    .listResults(ConstructorExpression.create(Application.class,
-                            app.applicationId,
-                            app.applicationName,
-                            app.resourceId)).getResults();
+            .from(app)
+            .listResults(ConstructorExpression.create(Application.class,
+                    app.applicationId,
+                    app.applicationName,
+                    app.resourceId)).getResults();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -198,17 +201,18 @@ public class AuditComponent implements AuditService {
     }
 
     @Override
-    public EventType getEventTypeByNameForApplication(final Long selectedAppId, final String eventName) {
+    public EventType getEventTypeByNameForApplication(final long selectedAppId, final String eventName) {
+        Objects.requireNonNull(eventName, "eventName cannot be null");
         try (Connection conn = dataSource.getConnection()) {
             QEventType evtType = QEventType.auditEventType;
             EventType rval = new SQLQuery(conn, sqlTemplates)
-            .from(evtType)
-            .where(evtType.applicationId.eq(selectedAppId))
-            .where(evtType.name.eq(eventName))
-            .uniqueResult(ConstructorExpression.create(EventType.class,
-                    evtType.eventTypeId,
-                    evtType.name,
-                    evtType.applicationId));
+                    .from(evtType)
+                    .where(evtType.applicationId.eq(selectedAppId))
+                    .where(evtType.name.eq(eventName))
+                    .uniqueResult(ConstructorExpression.create(EventType.class,
+                            evtType.eventTypeId,
+                            evtType.name,
+                            evtType.applicationId));
             if (rval == null) {
                 throw new IllegalArgumentException("not event type found for application #" + selectedAppId
                         + " with name [" + eventName + "]");
@@ -224,12 +228,12 @@ public class AuditComponent implements AuditService {
         try (Connection conn = dataSource.getConnection()) {
             QEventType evtType = QEventType.auditEventType;
             return new SQLQuery(conn, sqlTemplates)
-            .from(evtType)
-            .where(evtType.applicationId.eq(selectedAppId))
-            .list(ConstructorExpression.create(EventType.class,
-                    evtType.eventTypeId,
-                    evtType.name,
-                    evtType.applicationId));
+                    .from(evtType)
+                    .where(evtType.applicationId.eq(selectedAppId))
+                    .list(ConstructorExpression.create(EventType.class,
+                            evtType.eventTypeId,
+                            evtType.name,
+                            evtType.applicationId));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -245,31 +249,44 @@ public class AuditComponent implements AuditService {
     public EventType getOrCreateEventType(final String applicationName, final String eventTypeName) {
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
         Objects.requireNonNull(eventTypeName, "eventTypeName cannot be null");
-        Application app = findApplicationByName(applicationName);
-        if (app == null) {
-            throw new IllegalArgumentException("application [" + applicationName + "] does not exist");
-        }
-        EventType existing = findEventType(app.getApplicationId(), eventTypeName);
-        if (existing != null) {
-            return existing;
-        }
-        return createEventType(app, eventTypeName);
+        return transactionHelper.required(new Callback<EventType>() {
+
+            @Override
+            public EventType execute() {
+                Application app = findApplicationByName(applicationName);
+                if (app == null) {
+                    throw new IllegalArgumentException("application [" + applicationName + "] does not exist");
+                }
+                EventType existing = findEventType(app.getApplicationId(), eventTypeName);
+                if (existing != null) {
+                    return existing;
+                }
+                return createEventType(app, eventTypeName);
+            }
+
+        });
     }
 
     @Override
     public EventType[] getOrCreateEventTypes(final String applicationName, final String[] eventTypeNames) {
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
         Objects.requireNonNull(eventTypeNames, "eventTypeNames cannot be null");
-        Application app = findAppByName(applicationName);
-        if (app == null) {
-            throw new IllegalArgumentException("application [" + applicationName + "] does not exist");
-        }
-        EventType[] rval = new EventType[eventTypeNames.length];
-        int idx = 0;
-        for (String typeName : eventTypeNames) {
-            rval[idx++] = getOrCreateEventType(applicationName, typeName);
-        }
-        return rval;
+        return transactionHelper.required(new Callback<EventType[]>() {
+
+            @Override
+            public EventType[] execute() {
+                Application app = findAppByName(applicationName);
+                if (app == null) {
+                    throw new IllegalArgumentException("application [" + applicationName + "] does not exist");
+                }
+                EventType[] rval = new EventType[eventTypeNames.length];
+                int idx = 0;
+                for (String typeName : eventTypeNames) {
+                    rval[idx++] = getOrCreateEventType(applicationName, typeName);
+                }
+                return rval;
+            }
+        });
     }
 
     @Override

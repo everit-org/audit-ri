@@ -188,6 +188,12 @@ public class AuditComponentTest {
         auditComponent.getEventTypeByNameForApplication(0L, "nonexistent");
     }
 
+    @Test(expected = NullPointerException.class)
+    @TestDuringDevelopment
+    public void getEventTypeByNameForApplicationNullEventName() {
+        auditComponent.getEventTypeByNameForApplication(0, null);
+    }
+
     @Test
     @TestDuringDevelopment
     public void getEventTypeByNameForApplicationSuccess() {
@@ -219,6 +225,12 @@ public class AuditComponentTest {
         Application existingApp = auditComponent.getOrCreateApplication(APPNAME);
         Assert.assertNotNull(existingApp);
         Assert.assertEquals(newApp.getApplicationId(), existingApp.getApplicationId());
+    }
+
+    @Test(expected = NullPointerException.class)
+    @TestDuringDevelopment
+    public void getOrCreateApplicationNullName() {
+        auditComponent.getOrCreateApplication(null);
     }
 
     @Test(expected = NullPointerException.class)
