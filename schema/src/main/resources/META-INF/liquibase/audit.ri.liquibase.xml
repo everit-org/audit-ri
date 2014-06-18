@@ -26,13 +26,13 @@
         <changeSet id="1.0.0" author="everit">
 			<createTable tableName="AUDIT_APPLICATION">
 				<column name="APPLICATION_ID" type="BIGINT" autoIncrement="true">
-					<constraints primaryKey="true" nullable="false" />
+					<constraints primaryKey="true" />
 				</column>
 				<column name="APPLICATION_NAME" type="VARCHAR(255)">
-					<constraints  unique="true" />
+					<constraints  unique="true" nullable="false" />
 				</column>
 				<column name="RESOURCE_ID" type="BIGINT">
-					<constraints  unique="true" />
+					<constraints  unique="true" nullable="false" />
 				</column>
 			</createTable>        
 			
@@ -42,13 +42,17 @@
 				
 			<createTable tableName="AUDIT_EVENT_TYPE">
 				<column name="EVENT_TYPE_ID" type="BIGINT" autoIncrement="true">
-					<constraints primaryKey="true" nullable="false" />
+					<constraints primaryKey="true" />
 				</column>
 				<column name="NAME" type="VARCHAR(255)">
-					<constraints  unique="true" />
+					<constraints  unique="true" nullable="false"/>
 				</column>
-				<column name="RESOURCE_ID" type="BIGINT" />
-				<column name="APPLICATION_ID" type="BIGINT" />
+				<column name="RESOURCE_ID" type="BIGINT">
+					<constraints nullable="false" />
+				</column>
+				<column name="APPLICATION_ID" type="BIGINT">
+					<constraints nullable="false" />
+				</column>
 			</createTable>
 			
 			<addForeignKeyConstraint constraintName="FK_EVENT_TYPE_RESOURCE_ID"
@@ -61,11 +65,17 @@
 				
 			<createTable tableName="AUDIT_EVENT">
 				<column name="EVENT_ID" type="BIGINT">
-					<constraints primaryKey="true" nullable="false" />
+					<constraints primaryKey="true" />
 				</column>
-				<column name="SAVE_TIMESTAMP" type="TIMESTAMP" />
-				<column name="RESOURCE_ID" type="BIGINT" />
-				<column name="EVENT_TYPE_ID" type="BIGINT" />
+				<column name="SAVE_TIMESTAMP" type="TIMESTAMP">
+					<constraints nullable="false" />
+				</column>
+				<column name="RESOURCE_ID" type="BIGINT">
+					<constraints nullable="false" />
+				</column>
+				<column name="EVENT_TYPE_ID" type="BIGINT">
+					<constraints nullable="false" />
+				</column>
 			</createTable>
 			
 			<addForeignKeyConstraint constraintName="FK_EVENT_RESOURCE_ID"
@@ -78,7 +88,7 @@
 				
 			<createTable tableName="AUDIT_EVENT_DATA">
 				<column name="EVENT_DATA_ID" type="BIGINT">
-					<constraints primaryKey="true" nullable="false" />
+					<constraints primaryKey="true" />
 				</column>
 				<column name="EVENT_ID" type="BIGINT">
 					<constraints nullable="false" /> 

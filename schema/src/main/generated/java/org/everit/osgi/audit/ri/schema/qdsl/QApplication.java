@@ -1,19 +1,3 @@
-/**
- * This file is part of org.everit.osgi.audit.ri.schema.
- *
- * org.everit.osgi.audit.ri.schema is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * org.everit.osgi.audit.ri.schema is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with org.everit.osgi.audit.ri.schema.  If not, see <http://www.gnu.org/licenses/>.
- */
 package org.everit.osgi.audit.ri.schema.qdsl;
 
 import static com.mysema.query.types.PathMetadataFactory.*;
@@ -73,8 +57,8 @@ public class QApplication extends com.mysema.query.sql.RelationalPathBase<QAppli
 
     public void addMetadata() {
         addMetadata(applicationId, ColumnMetadata.named("APPLICATION_ID").ofType(-5).withSize(19).notNull());
-        addMetadata(applicationName, ColumnMetadata.named("APPLICATION_NAME").ofType(12).withSize(255));
-        addMetadata(resourceId, ColumnMetadata.named("RESOURCE_ID").ofType(-5).withSize(19));
+        addMetadata(applicationName, ColumnMetadata.named("APPLICATION_NAME").ofType(12).withSize(255).notNull());
+        addMetadata(resourceId, ColumnMetadata.named("RESOURCE_ID").ofType(-5).withSize(19).notNull());
     }
 
 }
