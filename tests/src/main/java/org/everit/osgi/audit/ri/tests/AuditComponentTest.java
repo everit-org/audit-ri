@@ -34,6 +34,7 @@ import org.everit.osgi.audit.api.dto.Application;
 import org.everit.osgi.audit.api.dto.Event;
 import org.everit.osgi.audit.api.dto.EventData;
 import org.everit.osgi.audit.api.dto.EventType;
+import org.everit.osgi.audit.api.dto.EventUi;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;
@@ -180,6 +181,27 @@ public class AuditComponentTest {
 
     @Test
     @TestDuringDevelopment
+    public void getEventById() {
+        createDefaultApp();
+        long eventId = logDefaultEvent();
+        EventUi event = auditComponent.getEventById(eventId);
+        Assert.assertNotNull(event);
+        Assert.assertEquals(eventId, event.getId().longValue());
+        Assert.assertEquals("login", event.getName());
+        Assert.assertEquals(APPNAME, event.getApplicationName());
+        Assert.assertNotNull(event.getSaveTimeStamp());
+        Assert.assertNotNull(event.getEventData());
+        Assert.assertEquals(2, event.getEventData().size());
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void getEventByIdNotFound() {
+        Assert.assertNull(auditComponent.getEventById(-1));
+    }
+
+    @Test
+    @TestDuringDevelopment
     public void getEventType() {
         createDefaultApp();
         EventType firstEvtType = auditComponent.getOrCreateEventType(APPNAME, "login");
@@ -280,16 +302,23 @@ public class AuditComponentTest {
         Assert.assertEquals(5, actual.size());
     }
 
+    private long logDefaultEvent() {
+        EventData[] eventDataArray = new EventData[] {
+                new EventData("host", "example.org"),
+                new EventData("cpuLoad", 10.75)
+        };
+        Event event = new Event("login", APPNAME, eventDataArray);
+        auditComponent.logEvent(event);
+        return new SQLQuery(conn, sqlTemplates).from(QEvent.auditEvent)
+                .orderBy(QEvent.auditEvent.eventId.desc())
+                .limit(1).uniqueResult(QEvent.auditEvent.eventId);
+    }
+
     @Test
     @TestDuringDevelopment
     public void logEvent() {
         createDefaultApp();
-        EventData[] eventDataArray = new EventData[] {
-                new EventData("host", "example.org"),
-                new EventData("cpuLoad", 0.75)
-        };
-        Event event = new Event("login", APPNAME, eventDataArray);
-        auditComponent.logEvent(event);
+        logDefaultEvent();
         QEvent evt = QEvent.auditEvent;
         Long eventId = new SQLQuery(conn, sqlTemplates).from(evt).limit(1)
                 .uniqueResult(ConstructorExpression.create(Long.class, evt.eventId));

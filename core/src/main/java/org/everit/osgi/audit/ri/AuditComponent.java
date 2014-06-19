@@ -48,6 +48,7 @@ import org.everit.osgi.resource.api.ResourceService;
 import org.everit.osgi.transaction.helper.api.Callback;
 import org.everit.osgi.transaction.helper.api.TransactionHelper;
 
+import com.mysema.query.Tuple;
 import com.mysema.query.sql.SQLQuery;
 import com.mysema.query.sql.SQLTemplates;
 import com.mysema.query.sql.dml.SQLInsertClause;
@@ -78,16 +79,6 @@ public class AuditComponent implements AuditService {
 
         private EventPersister(final Event event) {
             this.event = event;
-        }
-
-        private void addEventDataRowToBatchInsert(final long eventId, final SQLInsertClause insert,
-                final EventData eventData) {
-            QEventData evtData = QEventData.auditEventData;
-            insert.set(evtData.eventId, eventId);
-            insert.set(evtData.eventDataName, eventData.getName());
-            insert.set(evtData.eventDataType, eventData.getEventDataType().toString());
-            addEventDataValue(insert, eventData);
-            insert.addBatch();
         }
 
         private void addEventDataValue(final SQLInsertClause insert, final EventData eventData) {
@@ -122,14 +113,15 @@ public class AuditComponent implements AuditService {
             try {
                 try {
                     conn = dataSource.getConnection();
-                    QEvent evt = QEvent.auditEvent;
-                    long eventId = insertEventRow(evt);
-                    QEventData evtData = QEventData.auditEventData;
-                    SQLInsertClause insert = new SQLInsertClause(conn, sqlTemplates, evtData);
+                    long eventId = insertEventRow();
                     for (EventData eventData : event.getEventDataArray()) {
-                        addEventDataRowToBatchInsert(eventId, insert, eventData);
+                        insertEventDataRow(eventId, eventData);
                     }
-                    insert.execute();
+                    // int eventDataCount = event.getEventDataArray().length;
+                    // if (insertedRowCount != eventDataCount) {
+                    // throw new RuntimeException("failed to insert " + eventDataCount + " event data rows ("
+                    // + insertedRowCount + " succeeded)");
+                    // }
                 } finally {
                     conn.close();
                 }
@@ -139,7 +131,18 @@ public class AuditComponent implements AuditService {
             return null;
         }
 
-        private long insertEventRow(final QEvent evt) {
+        private void insertEventDataRow(final long eventId, final EventData eventData) {
+            QEventData evtData = QEventData.auditEventData;
+            SQLInsertClause insert = new SQLInsertClause(conn, sqlTemplates, evtData);
+            insert.set(evtData.eventId, eventId)
+            .set(evtData.eventDataName, eventData.getName())
+            .set(evtData.eventDataType, eventData.getEventDataType().toString());
+            addEventDataValue(insert, eventData);
+            long insertedRowCount = insert.execute();
+            // insert.addBatch();
+        }
+
+        private long insertEventRow() {
             return new SQLInsertClause(conn, sqlTemplates, evt)
                     .set(evt.resourceId, resourceId)
                     .set(evt.saveTimestamp, new Timestamp(event.getSaveTimeStamp().getTime()))
@@ -147,6 +150,14 @@ public class AuditComponent implements AuditService {
                     .executeWithKey(evt.eventId).longValue();
         }
     }
+
+    private static final QApplication app = QApplication.auditApplication;
+
+    private static final QEventType evtType = QEventType.auditEventType;
+
+    private static final QEvent evt = QEvent.auditEvent;
+
+    private static final QEventData evtData = QEventData.auditEventData;
 
     @Reference
     private SQLTemplates sqlTemplates;
@@ -195,7 +206,6 @@ public class AuditComponent implements AuditService {
                     } else {
                         insertedResourceId = resourceId;
                     }
-                    QApplication app = QApplication.auditApplication;
                     Long appId = new SQLInsertClause(conn, sqlTemplates, app)
                             .set(app.resourceId, insertedResourceId)
                             .set(app.applicationName, appName)
@@ -211,7 +221,6 @@ public class AuditComponent implements AuditService {
     private EventType createEventType(final Application app, final String eventTypeName) {
         try (Connection conn = dataSource.getConnection()) {
             Long resourceId = resourceService.createResource();
-            QEventType evtType = QEventType.auditEventType;
             Long eventTypeId = new SQLInsertClause(conn, sqlTemplates, evtType)
             .set(evtType.name, eventTypeName)
             .set(evtType.applicationId, app.getApplicationId())
@@ -227,7 +236,6 @@ public class AuditComponent implements AuditService {
     public Application findAppByName(final String appName) {
         Objects.requireNonNull(appName, "appName cannot be null");
         try (Connection conn = dataSource.getConnection()) {
-            QApplication app = QApplication.auditApplication;
             return new SQLQuery(conn, sqlTemplates)
                     .from(app)
                     .where(app.applicationName.eq(appName))
@@ -242,7 +250,6 @@ public class AuditComponent implements AuditService {
 
     private Application findApplicationByName(final String applicationName) {
         try (Connection conn = dataSource.getConnection()) {
-            QApplication app = QApplication.auditApplication;
             return new SQLQuery(conn, sqlTemplates)
             .from(app)
             .where(app.applicationName.eq(applicationName))
@@ -256,7 +263,6 @@ public class AuditComponent implements AuditService {
 
     private EventType findEventType(final long applicationId, final String eventTypeName) {
         try (Connection conn = dataSource.getConnection()) {
-            QEventType evtType = QEventType.auditEventType;
             return new SQLQuery(conn, sqlTemplates)
             .from(evtType)
             .where(evtType.name.eq(eventTypeName).and(evtType.applicationId.eq(applicationId)))
@@ -272,7 +278,6 @@ public class AuditComponent implements AuditService {
     @Override
     public List<Application> getApplications() {
         try (Connection conn = dataSource.getConnection()) {
-            QApplication app = QApplication.auditApplication;
             return new SQLQuery(conn, sqlTemplates)
                     .from(app)
                     .listResults(ConstructorExpression.create(Application.class,
@@ -286,15 +291,34 @@ public class AuditComponent implements AuditService {
 
     @Override
     public EventUi getEventById(final long eventId) {
-        // TODO Auto-generated method stub
-        return null;
+        try (Connection conn = dataSource.getConnection()) {
+            List<Tuple> result = new SQLQuery(conn, sqlTemplates)
+            .from(evt)
+            .join(evtType).on(evt.eventTypeId.eq(evtType.eventTypeId))
+            .join(app).on(app.applicationId.eq(evtType.applicationId))
+            .leftJoin(evtData).on(evt.eventId.eq(evtData.eventId))
+            .where(evt.eventId.eq(eventId))
+            .list(app.applicationName,
+                    evtType.name,
+                    evt.eventId,
+                    evt.saveTimestamp,
+                    evtData.eventDataName,
+                    evtData.eventDataType,
+                    evtData.numberValue,
+                    evtData.stringValue,
+                    evtData.textValue,
+                    evtData.timestampValue,
+                    evtData.binaryValue);
+            return new QueryResultMapper(result).mapToEvent();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public EventType getEventTypeByNameForApplication(final long selectedAppId, final String eventName) {
         Objects.requireNonNull(eventName, "eventName cannot be null");
         try (Connection conn = dataSource.getConnection()) {
-            QEventType evtType = QEventType.auditEventType;
             EventType rval = new SQLQuery(conn, sqlTemplates)
             .from(evtType)
             .where(evtType.applicationId.eq(selectedAppId))
@@ -316,7 +340,6 @@ public class AuditComponent implements AuditService {
     @Override
     public List<EventType> getEventTypesByApplication(final long selectedAppId) {
         try (Connection conn = dataSource.getConnection()) {
-            QEventType evtType = QEventType.auditEventType;
             return new SQLQuery(conn, sqlTemplates)
             .from(evtType)
             .where(evtType.applicationId.eq(selectedAppId))
