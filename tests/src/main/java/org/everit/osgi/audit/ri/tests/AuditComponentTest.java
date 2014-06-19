@@ -33,6 +33,7 @@ import org.everit.osgi.audit.api.AuditService;
 import org.everit.osgi.audit.api.dto.Application;
 import org.everit.osgi.audit.api.dto.Event;
 import org.everit.osgi.audit.api.dto.EventData;
+import org.everit.osgi.audit.api.dto.EventDataType;
 import org.everit.osgi.audit.api.dto.EventType;
 import org.everit.osgi.audit.api.dto.EventUi;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
@@ -192,6 +193,26 @@ public class AuditComponentTest {
         Assert.assertNotNull(event.getSaveTimeStamp());
         Assert.assertNotNull(event.getEventData());
         Assert.assertEquals(2, event.getEventData().size());
+        EventData hostData = event.getEventData().get("host");
+        Assert.assertEquals("example.org", hostData.getTextValue());
+        Assert.assertEquals(EventDataType.STRING, hostData.getEventDataType());
+        EventData cpuLoadData = event.getEventData().get("cpuLoad");
+        Assert.assertEquals(10.75, cpuLoadData.getNumberValue(), 0.01);
+        Assert.assertEquals(EventDataType.NUMBER, cpuLoadData.getEventDataType());
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void getEventByIdNoData() {
+        createDefaultApp();
+        Event event = new Event("login", APPNAME, new EventData[] {});
+        auditComponent.logEvent(event);
+        long eventId = new SQLQuery(conn, sqlTemplates).from(QEvent.auditEvent)
+                .orderBy(QEvent.auditEvent.eventId.desc())
+                .limit(1).uniqueResult(QEvent.auditEvent.eventId);
+        EventUi result = auditComponent.getEventById(eventId);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.getEventData().isEmpty());
     }
 
     @Test
