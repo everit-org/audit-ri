@@ -64,7 +64,7 @@
 				referencedTableName="AUDIT_APPLICATION" referencedColumnNames="APPLICATION_ID" />
 				
 			<createTable tableName="AUDIT_EVENT">
-				<column name="EVENT_ID" type="BIGINT">
+				<column name="EVENT_ID" type="BIGINT" autoIncrement="true">
 					<constraints primaryKey="true" />
 				</column>
 				<column name="SAVE_TIMESTAMP" type="TIMESTAMP">
@@ -87,7 +87,7 @@
 				referencedTableName="AUDIT_EVENT_TYPE" referencedColumnNames="EVENT_TYPE_ID"/>
 				
 			<createTable tableName="AUDIT_EVENT_DATA">
-				<column name="EVENT_DATA_ID" type="BIGINT">
+				<column name="EVENT_DATA_ID" type="BIGINT" autoIncrement="true">
 					<constraints primaryKey="true" />
 				</column>
 				<column name="EVENT_ID" type="BIGINT">

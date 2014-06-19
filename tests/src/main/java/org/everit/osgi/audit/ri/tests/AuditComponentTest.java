@@ -31,8 +31,12 @@ import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.everit.osgi.audit.api.AuditService;
 import org.everit.osgi.audit.api.dto.Application;
+import org.everit.osgi.audit.api.dto.Event;
+import org.everit.osgi.audit.api.dto.EventData;
 import org.everit.osgi.audit.api.dto.EventType;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
+import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
+import org.everit.osgi.audit.ri.schema.qdsl.QEventData;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventType;
 import org.everit.osgi.dev.testrunner.TestDuringDevelopment;
 import org.junit.After;
@@ -47,17 +51,17 @@ import com.mysema.query.sql.dml.SQLDeleteClause;
 import com.mysema.query.types.ConstructorExpression;
 
 @Component(name = "AuditComponentTest",
-immediate = true,
-metatype = true,
-configurationFactory = true,
-policy = ConfigurationPolicy.REQUIRE)
+        immediate = true,
+        metatype = true,
+        configurationFactory = true,
+        policy = ConfigurationPolicy.REQUIRE)
 @Service(AuditComponentTest.class)
 @Properties({
-    @Property(name = "eosgi.testEngine", value = "junit4"),
-    @Property(name = "eosgi.testId", value = "auditTest"),
-    @Property(name = "auditComponent.target"),
-    @Property(name = "dataSource.target"),
-    @Property(name = "sqlTemplates.target")
+        @Property(name = "eosgi.testEngine", value = "junit4"),
+        @Property(name = "eosgi.testId", value = "auditTest"),
+        @Property(name = "auditComponent.target"),
+        @Property(name = "dataSource.target"),
+        @Property(name = "sqlTemplates.target")
 })
 @TestDuringDevelopment
 public class AuditComponentTest {
@@ -90,6 +94,8 @@ public class AuditComponentTest {
     @After
     public void cleanupDatabase() {
         try {
+            new SQLDeleteClause(conn, sqlTemplates, QEventData.auditEventData).execute();
+            new SQLDeleteClause(conn, sqlTemplates, QEvent.auditEvent).execute();
             new SQLDeleteClause(conn, sqlTemplates, QEventType.auditEventType).execute();
             new SQLDeleteClause(conn, sqlTemplates, QApplication.auditApplication).execute();
             conn.close();
@@ -117,12 +123,12 @@ public class AuditComponentTest {
         createDefaultApp();
         QApplication app = QApplication.auditApplication;
         Application result = new SQLQuery(conn, sqlTemplates)
-        .from(app)
-        .where(app.applicationName.eq(APPNAME))
-        .uniqueResult(ConstructorExpression.create(Application.class,
-                app.applicationId,
-                app.applicationName,
-                app.resourceId));
+                .from(app)
+                .where(app.applicationName.eq(APPNAME))
+                .uniqueResult(ConstructorExpression.create(Application.class,
+                        app.applicationId,
+                        app.applicationName,
+                        app.resourceId));
         Assert.assertEquals(APPNAME, result.getAppName());
         Assert.assertNotNull(result.getResourceId());
     }
@@ -272,6 +278,33 @@ public class AuditComponentTest {
         auditComponent.getOrCreateEventTypes(APPNAME, new String[] { "addComment", "balanceUpdate", "viewProduct" });
         List<EventType> actual = auditComponent.getEventTypesByApplication(app.getApplicationId());
         Assert.assertEquals(5, actual.size());
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void logEvent() {
+        createDefaultApp();
+        EventData[] eventDataArray = new EventData[] {
+                new EventData("host", "example.org"),
+                new EventData("cpuLoad", 0.75)
+        };
+        Event event = new Event("login", APPNAME, eventDataArray);
+        auditComponent.logEvent(event);
+        QEvent evt = QEvent.auditEvent;
+        Long eventId = new SQLQuery(conn, sqlTemplates).from(evt).limit(1)
+                .uniqueResult(ConstructorExpression.create(Long.class, evt.eventId));
+        Assert.assertNotNull(eventId);
+        QEventData evtData = QEventData.auditEventData;
+        long dataCount = new SQLQuery(conn, sqlTemplates).from(evtData).where(evtData.eventId.eq(eventId)).count();
+        Assert.assertEquals(2, dataCount);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @TestDuringDevelopment
+    public void logEventMissingApplication() {
+        EventData[] eventDataArray = new EventData[] {};
+        Event evt = new Event("login", APPNAME, eventDataArray);
+        auditComponent.logEvent(evt);
     }
 
     @Test
