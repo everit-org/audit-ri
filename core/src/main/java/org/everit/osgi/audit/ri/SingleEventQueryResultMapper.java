@@ -42,16 +42,21 @@ public class SingleEventQueryResultMapper {
 
     private static final QEvent evt = QEvent.auditEvent;
 
-    private static final QEventData evtData = QEventData.auditEventData;
+    private final QEventData evtDataAlias;
 
     private final List<Tuple> result;
 
     public SingleEventQueryResultMapper(final List<Tuple> result) {
+        this(result, QEventData.auditEventData);
+    }
+
+    public SingleEventQueryResultMapper(final List<Tuple> result, final QEventData evtDataAlias) {
         this.result = result;
+        this.evtDataAlias = Objects.requireNonNull(evtDataAlias, "evtDataAlias cannot be null");
     }
 
     private void addBlobData(final Builder builder, final String dataName, final Tuple row) {
-        Blob blob = row.get(evtData.binaryValue);
+        Blob blob = row.get(evtDataAlias.binaryValue);
         try {
             try {
                 builder.binaryData(dataName, blob.getBytes(0, (int) blob.length()));
@@ -66,22 +71,22 @@ public class SingleEventQueryResultMapper {
     private void addEventDataForRow(final Builder builder, final Tuple row) {
         Objects.requireNonNull(builder, "builder cannot be null");
         Objects.requireNonNull(row, "row cannot be null");
-        String type = row.get(evtData.eventDataType);
+        String type = row.get(evtDataAlias.eventDataType);
         if (type == null) {
             throw new IllegalArgumentException("row has null value for eventData.eventDataType");
         }
-        String dataName = row.get(evtData.eventDataName);
+        String dataName = row.get(evtDataAlias.eventDataName);
         if (type.equals(EventDataType.BINARY.toString())) {
             addBlobData(builder, dataName, row);
         } else if (type.equals(EventDataType.STRING.toString())) {
-            builder.stringData(dataName, row.get(evtData.stringValue));
+            builder.stringData(dataName, row.get(evtDataAlias.stringValue));
         } else if (type.equals(EventDataType.TEXT.toString())) {
-            builder.textData(dataName, row.get(evtData.textValue));
+            builder.textData(dataName, row.get(evtDataAlias.textValue));
         } else if (type.equals(EventDataType.NUMBER.toString())) {
-            builder.numberData(dataName, row.get(evtData.numberValue));
+            builder.numberData(dataName, row.get(evtDataAlias.numberValue));
         } else if (type.equals(EventDataType.TIMESTAMP)) {
             Calendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(row.get(evtData.timestampValue).getTime());
+            calendar.setTimeInMillis(row.get(evtDataAlias.timestampValue).getTime());
             builder.timestampData(dataName, calendar);
         } else {
             throw new IllegalStateException("unknown event data type: " + type);
@@ -95,11 +100,11 @@ public class SingleEventQueryResultMapper {
         }
         Tuple firstRow = resultIt.next();
         EventUi.Builder builder = new EventUi.Builder()
-        .eventId(firstRow.get(evt.eventId))
-        .typeName(firstRow.get(evtType.name))
-        .appName(firstRow.get(app.applicationName))
-        .saveTimestamp(firstRow.get(evt.saveTimestamp));
-        if (firstRow.get(evtData.eventDataType) == null) {
+                .eventId(firstRow.get(evt.eventId))
+                .typeName(firstRow.get(evtType.name))
+                .appName(firstRow.get(app.applicationName))
+                .saveTimestamp(firstRow.get(evt.saveTimestamp));
+        if (firstRow.get(evtDataAlias.eventDataType) == null) {
             return builder.build();
         }
         addEventDataForRow(builder, firstRow);

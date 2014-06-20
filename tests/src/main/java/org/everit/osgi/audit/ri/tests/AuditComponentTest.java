@@ -18,8 +18,10 @@ package org.everit.osgi.audit.ri.tests;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -53,17 +55,17 @@ import com.mysema.query.sql.dml.SQLDeleteClause;
 import com.mysema.query.types.ConstructorExpression;
 
 @Component(name = "AuditComponentTest",
-        immediate = true,
-        metatype = true,
-        configurationFactory = true,
-        policy = ConfigurationPolicy.REQUIRE)
+immediate = true,
+metatype = true,
+configurationFactory = true,
+policy = ConfigurationPolicy.REQUIRE)
 @Service(AuditComponentTest.class)
 @Properties({
-        @Property(name = "eosgi.testEngine", value = "junit4"),
-        @Property(name = "eosgi.testId", value = "auditTest"),
-        @Property(name = "auditComponent.target"),
-        @Property(name = "dataSource.target"),
-        @Property(name = "sqlTemplates.target")
+    @Property(name = "eosgi.testEngine", value = "junit4"),
+    @Property(name = "eosgi.testId", value = "auditTest"),
+    @Property(name = "auditComponent.target"),
+    @Property(name = "dataSource.target"),
+    @Property(name = "sqlTemplates.target")
 })
 @TestDuringDevelopment
 public class AuditComponentTest {
@@ -125,12 +127,12 @@ public class AuditComponentTest {
         createDefaultApp();
         QApplication app = QApplication.auditApplication;
         Application result = new SQLQuery(conn, sqlTemplates)
-                .from(app)
-                .where(app.applicationName.eq(APPNAME))
-                .uniqueResult(ConstructorExpression.create(Application.class,
-                        app.applicationId,
-                        app.applicationName,
-                        app.resourceId));
+        .from(app)
+        .where(app.applicationName.eq(APPNAME))
+        .uniqueResult(ConstructorExpression.create(Application.class,
+                app.applicationId,
+                app.applicationName,
+                app.resourceId));
         Assert.assertEquals(APPNAME, result.getAppName());
         Assert.assertNotNull(result.getResourceId());
     }
@@ -372,4 +374,64 @@ public class AuditComponentTest {
         }
     }
 
+    @Test
+    @TestDuringDevelopment
+    public void readEventAllDataFields() {
+        createDefaultApp();
+        long eventId = logDefaultEvent();
+        Set<String> dataTypes = new HashSet<String>(2);
+        dataTypes.add("host");
+        dataTypes.add("cpuLoad");
+        EventUi event = auditComponent.readEvent(eventId, dataTypes);
+        Assert.assertNotNull(event);
+        Assert.assertEquals(eventId, event.getId().longValue());
+        Assert.assertEquals("login", event.getName());
+        Assert.assertEquals(APPNAME, event.getApplicationName());
+        Assert.assertNotNull(event.getSaveTimeStamp());
+        Assert.assertNotNull(event.getEventData());
+        Assert.assertEquals(2, event.getEventData().size());
+        EventData hostData = event.getEventData().get("host");
+        Assert.assertEquals("example.org", hostData.getTextValue());
+        Assert.assertEquals(EventDataType.STRING, hostData.getEventDataType());
+        EventData cpuLoadData = event.getEventData().get("cpuLoad");
+        Assert.assertEquals(10.75, cpuLoadData.getNumberValue(), 0.01);
+        Assert.assertEquals(EventDataType.NUMBER, cpuLoadData.getEventDataType());
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void readEventMissingData() {
+        createDefaultApp();
+        long eventId = logDefaultEvent();
+        Set<String> dataTypes = new HashSet<String>(1);
+        dataTypes.add("nonexistentDataType");
+        EventUi event = auditComponent.readEvent(eventId, dataTypes);
+        Assert.assertNotNull(event);
+        Assert.assertEquals(eventId, event.getId().longValue());
+        Assert.assertEquals("login", event.getName());
+        Assert.assertEquals(APPNAME, event.getApplicationName());
+        Assert.assertNotNull(event.getSaveTimeStamp());
+        Assert.assertNotNull(event.getEventData());
+        Assert.assertEquals(0, event.getEventData().size());
+    }
+
+    @Test
+    @TestDuringDevelopment
+    public void readEventOneDataField() {
+        createDefaultApp();
+        long eventId = logDefaultEvent();
+        Set<String> dataTypes = new HashSet<String>(1);
+        dataTypes.add("host");
+        EventUi event = auditComponent.readEvent(eventId, dataTypes);
+        Assert.assertNotNull(event);
+        Assert.assertEquals(eventId, event.getId().longValue());
+        Assert.assertEquals("login", event.getName());
+        Assert.assertEquals(APPNAME, event.getApplicationName());
+        Assert.assertNotNull(event.getSaveTimeStamp());
+        Assert.assertNotNull(event.getEventData());
+        Assert.assertEquals(1, event.getEventData().size());
+        EventData hostData = event.getEventData().get("host");
+        Assert.assertEquals("example.org", hostData.getTextValue());
+        Assert.assertEquals(EventDataType.STRING, hostData.getEventDataType());
+    }
 }
