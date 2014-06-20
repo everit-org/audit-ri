@@ -20,6 +20,8 @@ import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,6 +40,7 @@ import org.everit.osgi.audit.api.AuditService;
 import org.everit.osgi.audit.api.dto.Application;
 import org.everit.osgi.audit.api.dto.Event;
 import org.everit.osgi.audit.api.dto.EventData;
+import org.everit.osgi.audit.api.dto.EventDataType;
 import org.everit.osgi.audit.api.dto.EventType;
 import org.everit.osgi.audit.api.dto.EventUi;
 import org.everit.osgi.audit.api.dto.FieldWithType;
@@ -399,8 +402,26 @@ public class AuditComponent implements AuditService {
 
     @Override
     public List<FieldWithType> getResultFieldsWithTypes(final Long[] selectedAppId, final Long[] selectedEventTypeId) {
-        // TODO Auto-generated method stub
-        return null;
+        try (Connection conn = dataSource.getConnection()) {
+            List<Tuple> rawResult = new SQLQuery(conn, sqlTemplates)
+                    .from(evt)
+                    .join(evtData)
+                    .on(evt.eventId.eq(evtData.eventId))
+                    .join(evtType)
+                    .on(evt.eventTypeId.eq(evtType.eventTypeId))
+                    .where(evtType.applicationId.in(Arrays.asList(selectedAppId))
+                            .and(evtType.eventTypeId.in(Arrays.asList(selectedEventTypeId))))
+                    .distinct()
+                    .list(evtData.eventDataName, evtData.eventDataType);
+            List<FieldWithType> rval = new ArrayList<FieldWithType>(rawResult.size());
+            for (Tuple row : rawResult) {
+                EventDataType dataType = EventDataType.valueOf(row.get(evtData.eventDataType));
+                new FieldWithType(row.get(evtData.eventDataName), dataType, null);
+            }
+            return rval;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
