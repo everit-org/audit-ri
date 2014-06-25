@@ -29,11 +29,14 @@ import java.util.Objects;
 
 import org.everit.osgi.audit.api.dto.DataFilter;
 import org.everit.osgi.audit.api.dto.EventData;
+import org.everit.osgi.audit.api.dto.EventUi;
 import org.everit.osgi.audit.api.dto.Operator;
+import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventType;
 
+import com.mysema.query.Tuple;
 import com.mysema.query.sql.SQLQuery;
 import com.mysema.query.sql.SQLSubQuery;
 import com.mysema.query.sql.SQLTemplates;
@@ -81,6 +84,10 @@ public class ComplexEventLoader {
 
     private final long limit;
 
+    private final QEventType evtType = QEventType.auditEventType;
+
+    private final QApplication app = QApplication.auditApplication;
+
     public ComplexEventLoader(final Connection conn, final SQLTemplates sqlTemplates, final Long[] selectedAppIds,
             final Long[] selectedEventTypeIds,
             final List<String> dataFields,
@@ -99,6 +106,10 @@ public class ComplexEventLoader {
         this.limit = limit;
     }
 
+    private void addOrderBy() {
+        query = query.orderBy(evtSubqueryAlias.saveTimestamp.desc(), evtSubqueryAlias.eventId.asc());
+    }
+
     private Timestamp asTimestamp(final Calendar cal) {
         return new Timestamp(cal.getTimeInMillis());
     }
@@ -107,8 +118,8 @@ public class ComplexEventLoader {
         QEventData evtData = QEventData.auditEventData;
         SQLSubQuery subQuery = new SQLSubQuery().from(evtData);
         subQuery = subQuery.where(buildEventDataSubqueryPredicate());
-        query.leftJoin(subQuery.list(), evtDataSubqueryAlias = new QEventData("datas"))
-        .on(evtSubqueryAlias.eventId.eq(evtDataSubqueryAlias.eventId));
+        query = query.leftJoin(subQuery.list(), evtDataSubqueryAlias = new QEventData("datas"))
+                .on(evtSubqueryAlias.eventId.eq(evtDataSubqueryAlias.eventId));
     }
 
     private BooleanExpression buildEventDataSubqueryPredicate() {
@@ -142,13 +153,11 @@ public class ComplexEventLoader {
 
     private void buildFromClause() {
         QEvent evt = QEvent.auditEvent;
-        QEventType evtType = QEventType.auditEventType;
         SQLSubQuery subQuery = new SQLSubQuery().from(evt)
-                .join(evtType).on(evt.eventTypeId.eq(evtType.eventTypeId))
                 .where(buildEventSubqueryPredicate())
                 .offset(offset)
                 .limit(limit);
-        query.from(subQuery.list(), evtSubqueryAlias = new QEvent("events"));
+        query = query.from(subQuery.list(), evtSubqueryAlias = new QEvent("events"));
     }
 
     private BooleanExpression buildPredicateForFilter(final DataFilter dataFilter) {
@@ -172,7 +181,7 @@ public class ComplexEventLoader {
             break;
         case TIMESTAMP:
             field = evtData.timestampValue;
-            value = new Timestamp(operands.getTimestampValue().getTimeInMillis());
+            value = asTimestamp(operands.getTimestampValue());
             break;
         case BINARY:
         default:
@@ -185,7 +194,30 @@ public class ComplexEventLoader {
     private void buildQuery() {
         query = new SQLQuery(conn, sqlTemplates);
         buildFromClause();
+        joinAppAndEventType();
         buildEventDataSubquery();
+        addOrderBy();
+    }
+
+    private void joinAppAndEventType() {
+        query = query.leftJoin(evtType).on(evtSubqueryAlias.eventTypeId.eq(evtType.eventTypeId));
+        query = query.leftJoin(app).on(evtType.applicationId.eq(app.applicationId));
+    }
+
+    public List<EventUi> loadEvents() {
+        buildQuery();
+        List<Tuple> result = query.list(app.applicationName,
+                evtType.name,
+                evtSubqueryAlias.eventId,
+                evtSubqueryAlias.saveTimestamp,
+                evtDataSubqueryAlias.eventDataName,
+                evtDataSubqueryAlias.eventDataType,
+                evtDataSubqueryAlias.numberValue,
+                evtDataSubqueryAlias.stringValue,
+                evtDataSubqueryAlias.textValue,
+                evtDataSubqueryAlias.timestampValue,
+                evtDataSubqueryAlias.binaryValue);
+        return new MultipleEventQueryResultMapper(result, evtSubqueryAlias, evtDataSubqueryAlias).mapToEvents();
     }
 
 }
