@@ -128,8 +128,10 @@ public class ComplexEventLoader {
         if (dataFields != null) {
             predicate = predicate.and(evtData.eventDataName.in(dataFields));
         }
-        for (DataFilter dataFilter : dataFilters) {
-            predicate = predicate.and(buildPredicateForFilter(dataFilter));
+        if (dataFilters != null) {
+            for (DataFilter dataFilter : dataFilters) {
+                predicate = predicate.and(buildPredicateForFilter(dataFilter));
+            }
         }
         return predicate;
     }
@@ -139,7 +141,7 @@ public class ComplexEventLoader {
         QEventType evtType = QEventType.auditEventType;
         BooleanExpression rval = evtType.applicationId.in(selectedAppIds);
         if (selectedEventTypeIds != null) {
-            rval = rval.and(evtType.eventTypeId.in(selectedEventTypeIds));
+            rval = rval.and(evt.eventTypeId.in(selectedEventTypeIds));
         }
         if (eventsFrom != null && eventsTo != null) {
             rval = rval.and(evt.saveTimestamp.between(asTimestamp(eventsFrom), asTimestamp(eventsTo)));
@@ -153,7 +155,9 @@ public class ComplexEventLoader {
 
     private void buildFromClause() {
         QEvent evt = QEvent.auditEvent;
+        QEventType evtType = QEventType.auditEventType;
         SQLSubQuery subQuery = new SQLSubQuery().from(evt)
+                .join(evtType).on(evt.eventTypeId.eq(evtType.eventTypeId))
                 .where(buildEventSubqueryPredicate())
                 .offset(offset)
                 .limit(limit);

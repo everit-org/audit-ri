@@ -171,6 +171,13 @@ public class AuditComponentTest {
         Assert.assertNotNull(actual);
     }
 
+    // @Test
+    // @TestDuringDevelopment
+    public void findEventsEmptyResult() {
+        long appId = createDefaultApp().getApplicationId();
+        auditComponent.findEvents(new Long[] { new Long(appId) }, null, null, null, null, null, null, 0, 10000);
+    }
+
     @Test
     @TestDuringDevelopment
     public void getApplications() {
