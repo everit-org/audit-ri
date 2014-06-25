@@ -1,3 +1,19 @@
+/**
+ * This file is part of org.everit.osgi.audit.ri.
+ *
+ * org.everit.osgi.audit.ri is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * org.everit.osgi.audit.ri is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with org.everit.osgi.audit.ri.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.everit.osgi.audit.ri;
 
 import java.sql.Connection;
@@ -5,11 +21,15 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 import org.everit.osgi.audit.api.dto.DataFilter;
+import org.everit.osgi.audit.api.dto.EventData;
+import org.everit.osgi.audit.api.dto.Operator;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventType;
@@ -17,9 +37,21 @@ import org.everit.osgi.audit.ri.schema.qdsl.QEventType;
 import com.mysema.query.sql.SQLQuery;
 import com.mysema.query.sql.SQLSubQuery;
 import com.mysema.query.sql.SQLTemplates;
+import com.mysema.query.support.Expressions;
+import com.mysema.query.types.Expression;
+import com.mysema.query.types.Ops;
 import com.mysema.query.types.expr.BooleanExpression;
 
 public class ComplexEventLoader {
+
+    private static final Map<Operator, com.mysema.query.types.Operator<Boolean>> operatorMapping = new HashMap<>();
+
+    static {
+        operatorMapping.put(Operator.EQ, Ops.EQ);
+        operatorMapping.put(Operator.LT, Ops.LT);
+        operatorMapping.put(Operator.GT, Ops.GT);
+        operatorMapping.put(Operator.STARTS_WITH, Ops.STARTS_WITH);
+    }
 
     private final Connection conn;
 
@@ -74,12 +106,21 @@ public class ComplexEventLoader {
     private void buildEventDataSubquery() {
         QEventData evtData = QEventData.auditEventData;
         SQLSubQuery subQuery = new SQLSubQuery().from(evtData);
-        if (dataFields != null) {
-            subQuery = subQuery.where(evtData.eventDataName.in(dataFields));
-            // TODO filters
-        }
+        subQuery = subQuery.where(buildEventDataSubqueryPredicate());
         query.leftJoin(subQuery.list(), evtDataSubqueryAlias = new QEventData("datas"))
-                .on(evtSubqueryAlias.eventId.eq(evtDataSubqueryAlias.eventId));
+        .on(evtSubqueryAlias.eventId.eq(evtDataSubqueryAlias.eventId));
+    }
+
+    private BooleanExpression buildEventDataSubqueryPredicate() {
+        QEventData evtData = QEventData.auditEventData;
+        BooleanExpression predicate = Expressions.predicate(Ops.EQ, Expressions.constant(1), Expressions.constant(1));
+        if (dataFields != null) {
+            predicate = predicate.and(evtData.eventDataName.in(dataFields));
+        }
+        for (DataFilter dataFilter : dataFilters) {
+            predicate = predicate.and(buildPredicateForFilter(dataFilter));
+        }
+        return predicate;
     }
 
     private BooleanExpression buildEventSubqueryPredicate() {
@@ -108,6 +149,37 @@ public class ComplexEventLoader {
                 .offset(offset)
                 .limit(limit);
         query.from(subQuery.list(), evtSubqueryAlias = new QEvent("events"));
+    }
+
+    private BooleanExpression buildPredicateForFilter(final DataFilter dataFilter) {
+        QEventData evtData = QEventData.auditEventData;
+        BooleanExpression pred = null;
+        Expression<?> field;
+        Object value;
+        EventData operands = dataFilter.getOperands();
+        switch (operands.getEventDataType()) {
+        case NUMBER:
+            field = evtData.numberValue;
+            value = operands.getNumberValue();
+            break;
+        case STRING:
+            field = evtData.stringValue;
+            value = operands.getTextValue();
+            break;
+        case TEXT:
+            field = evtData.textValue;
+            value = operands.getTextValue();
+            break;
+        case TIMESTAMP:
+            field = evtData.timestampValue;
+            value = new Timestamp(operands.getTimestampValue().getTimeInMillis());
+            break;
+        case BINARY:
+        default:
+            throw new IllegalArgumentException("unsupported operator: " + dataFilter.getOperator());
+        }
+        pred = Expressions.predicate(operatorMapping.get(dataFilter.getOperator()), field, Expressions.constant(value));
+        return evtData.eventDataName.ne(operands.getName()).or(pred);
     }
 
     private void buildQuery() {
