@@ -288,48 +288,17 @@
       <artifactId>h2</artifactId>
       <version>1.4.177</version>
     </dependency>
-    
-    
-    		<dependency>
-			<groupId>org.ops4j.pax.jdbc</groupId>
-			<artifactId>pax-jdbc-postgresql</artifactId>
-			<version>0.3.0</version>
-		</dependency>
-		<dependency>
-    		<groupId>org.apache.servicemix.bundles</groupId>
-    		<artifactId>org.apache.servicemix.bundles.postgresql</artifactId>
-    		<version>9.3-1100-jdbc41_1</version>
-		</dependency>
-<!--     <dependency> -->
-<!--     <groupId>org.ops4j.pax.jdbc</groupId> -->
-<!--     <artifactId>pax-jdbc-postgresql</artifactId> -->
-<!--     <version>0.3.0</version> -->
-<!-- </dependency> -->
-<!--     <dependency> -->
-<!-- 		<groupId>postgresql</groupId> -->
-<!-- 		<artifactId>postgresql</artifactId> -->
-<!-- 		<version>9.1-901.jdbc4</version> -->
-<!-- 		<classifier>bundle_jta11</classifier> -->
-<!-- 	</dependency> -->
-	
-<!-- 	<dependency> -->
-<!--     <groupId>org.postgresql</groupId> -->
-<!--     <artifactId>postgresql</artifactId> -->
-<!--     <version>9.3-1101-jdbc41</version> -->
-<!-- </dependency> -->
 
-<!-- <dependency> -->
-<!-- 	<groupId>org.ancoron.postgresql</groupId> -->
-<!-- 	<artifactId>org.postgresql.osgi</artifactId> -->
-<!-- 	<version>9.1.901.jdbc4.1-rc9</version> -->
-<!-- </dependency> -->
-
-<!-- <dependency> -->
-<!--   <groupId>org.everit.osgi.jdbc</groupId> -->
-<!--   <artifactId>org.everit.osgi.jdbc.postgresql</artifactId> -->
-<!--   <version>1.0.1-SNAPSHOT</version> -->
-<!-- </dependency> -->
-
+	<dependency>
+		<groupId>org.ops4j.pax.jdbc</groupId>
+		<artifactId>pax-jdbc-postgresql</artifactId>
+		<version>0.3.0</version>
+	</dependency>
+	<dependency>
+		<groupId>org.apache.servicemix.bundles</groupId>
+		<artifactId>org.apache.servicemix.bundles.postgresql</artifactId>
+		<version>9.3-1100-jdbc41_1</version>
+	</dependency>
 
     <dependency>
       <groupId>org.ow2.spec.osgi</groupId>
