@@ -118,7 +118,9 @@ public class ComplexEventLoader {
         QEventData evtData = QEventData.auditEventData;
         SQLSubQuery subQuery = new SQLSubQuery().from(evtData);
         subQuery = subQuery.where(buildEventDataSubqueryPredicate());
-        query = query.leftJoin(subQuery.list(), evtDataSubqueryAlias = new QEventData("datas"))
+        // query = query.leftJoin(subQuery.list(), evtDataSubqueryAlias = new QEventData("datas"))
+        // .on(evtSubqueryAlias.eventId.eq(evtDataSubqueryAlias.eventId));
+        query = query.leftJoin(evtDataSubqueryAlias = evtData)
                 .on(evtSubqueryAlias.eventId.eq(evtDataSubqueryAlias.eventId));
     }
 
@@ -157,11 +159,12 @@ public class ComplexEventLoader {
         QEvent evt = QEvent.auditEvent;
         QEventType evtType = QEventType.auditEventType;
         SQLSubQuery subQuery = new SQLSubQuery().from(evt)
-                .join(evtType).on(evt.eventTypeId.eq(evtType.eventTypeId))
+                .leftJoin(evtType).on(evt.eventTypeId.eq(evtType.eventTypeId))
                 .where(buildEventSubqueryPredicate())
                 .offset(offset)
                 .limit(limit);
         query = query.from(subQuery.list(), evtSubqueryAlias = new QEvent("events"));
+        // query = query.from(evtSubqueryAlias = evt);
     }
 
     private BooleanExpression buildPredicateForFilter(final DataFilter dataFilter) {

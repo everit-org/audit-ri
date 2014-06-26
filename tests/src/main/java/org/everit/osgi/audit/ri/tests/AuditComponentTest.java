@@ -55,17 +55,17 @@ import com.mysema.query.sql.dml.SQLDeleteClause;
 import com.mysema.query.types.ConstructorExpression;
 
 @Component(name = "AuditComponentTest",
-immediate = true,
-metatype = true,
-configurationFactory = true,
-policy = ConfigurationPolicy.REQUIRE)
+        immediate = true,
+        metatype = true,
+        configurationFactory = true,
+        policy = ConfigurationPolicy.REQUIRE)
 @Service(AuditComponentTest.class)
 @Properties({
-    @Property(name = "eosgi.testEngine", value = "junit4"),
-    @Property(name = "eosgi.testId", value = "auditTest"),
-    @Property(name = "auditComponent.target"),
-    @Property(name = "dataSource.target"),
-    @Property(name = "sqlTemplates.target")
+        @Property(name = "eosgi.testEngine", value = "junit4"),
+        @Property(name = "eosgi.testId", value = "auditTest"),
+        @Property(name = "auditComponent.target"),
+        @Property(name = "dataSource.target"),
+        @Property(name = "sqlTemplates.target")
 })
 @TestDuringDevelopment
 public class AuditComponentTest {
@@ -127,12 +127,12 @@ public class AuditComponentTest {
         createDefaultApp();
         QApplication app = QApplication.auditApplication;
         Application result = new SQLQuery(conn, sqlTemplates)
-        .from(app)
-        .where(app.applicationName.eq(APPNAME))
-        .uniqueResult(ConstructorExpression.create(Application.class,
-                app.applicationId,
-                app.applicationName,
-                app.resourceId));
+                .from(app)
+                .where(app.applicationName.eq(APPNAME))
+                .uniqueResult(ConstructorExpression.create(Application.class,
+                        app.applicationId,
+                        app.applicationName,
+                        app.resourceId));
         Assert.assertEquals(APPNAME, result.getAppName());
         Assert.assertNotNull(result.getResourceId());
     }
@@ -171,8 +171,8 @@ public class AuditComponentTest {
         Assert.assertNotNull(actual);
     }
 
-    // @Test
-    // @TestDuringDevelopment
+    @Test
+    @TestDuringDevelopment
     public void findEventsEmptyResult() {
         long appId = createDefaultApp().getApplicationId();
         auditComponent.findEvents(new Long[] { new Long(appId) }, null, null, null, null, null, null, 0, 10000);
