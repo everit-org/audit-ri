@@ -309,7 +309,7 @@
     <dependency>
       <groupId>org.everit.osgi</groupId>
       <artifactId>org.everit.osgi.querydsl.templates</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.2</version>
     </dependency>
 
 		<!-- Dependencies needed by QueryDSL -->
@@ -324,6 +324,11 @@
       <artifactId>org.apache.servicemix.bundles.javax-inject</artifactId>
       <version>1_2</version>
     </dependency>
+	<dependency>
+		<groupId>com.mysema.querydsl</groupId>
+		<artifactId>querydsl-core</artifactId>
+		<version>3.3.4</version>
+	</dependency>
 
   </dependencies>
   

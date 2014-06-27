@@ -56,7 +56,7 @@
 							org.everit.osgi.audit.ri.schema.qdsl
 						</Export-Package>
 						<Require-Capability>
-							liquibase.schema;filter:=(name=org.everit.osgi.resource)
+							liquibase.schema;filter=(name=org.everit.osgi.resource)
 						</Require-Capability>
 						<Provide-Capability>
 							liquibase.schema;name=org.everit.osgi.audit.ri.schema;resource=/META-INF/liquibase/audit.ri.liquibase.xml;lqmg.config.resource=/META-INF/liquibase/audit.ri.lqmg.xml
@@ -104,7 +104,7 @@
 		<dependency>
 			<groupId>com.mysema.querydsl</groupId>
 			<artifactId>querydsl-sql</artifactId>
-			<version>3.3.1</version>
+			<version>3.3.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.servicemix.bundles</groupId>
