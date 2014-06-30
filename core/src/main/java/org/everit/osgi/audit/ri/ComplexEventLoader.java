@@ -118,10 +118,18 @@ public class ComplexEventLoader {
         QEventData evtData = QEventData.auditEventData;
         SQLSubQuery subQuery = new SQLSubQuery().from(evtData);
         subQuery = subQuery.where(buildEventDataSubqueryPredicate());
-        // query = query.leftJoin(subQuery.list(), evtDataSubqueryAlias = new QEventData("datas"))
-        // .on(evtSubqueryAlias.eventId.eq(evtDataSubqueryAlias.eventId));
-        query = query.leftJoin(evtDataSubqueryAlias = evtData)
+        query = query.leftJoin(subQuery.list(
+                evtData.eventId,
+                evtData.eventDataName,
+                evtData.eventDataType,
+                evtData.numberValue,
+                evtData.stringValue,
+                evtData.textValue,
+                evtData.binaryValue,
+                evtData.timestampValue), evtDataSubqueryAlias = new QEventData("datas"))
                 .on(evtSubqueryAlias.eventId.eq(evtDataSubqueryAlias.eventId));
+        // query = query.leftJoin(evtDataSubqueryAlias = evtData)
+        // .on(evtSubqueryAlias.eventId.eq(evtDataSubqueryAlias.eventId));
     }
 
     private BooleanExpression buildEventDataSubqueryPredicate() {

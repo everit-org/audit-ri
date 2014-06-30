@@ -18,6 +18,7 @@ package org.everit.osgi.audit.ri.tests;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -33,11 +34,13 @@ import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.everit.osgi.audit.api.AuditService;
 import org.everit.osgi.audit.api.dto.Application;
+import org.everit.osgi.audit.api.dto.DataFilter;
 import org.everit.osgi.audit.api.dto.Event;
 import org.everit.osgi.audit.api.dto.EventData;
 import org.everit.osgi.audit.api.dto.EventDataType;
 import org.everit.osgi.audit.api.dto.EventType;
 import org.everit.osgi.audit.api.dto.EventUi;
+import org.everit.osgi.audit.api.dto.Operator;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;
@@ -54,17 +57,17 @@ import com.mysema.query.sql.dml.SQLDeleteClause;
 import com.mysema.query.types.ConstructorExpression;
 
 @Component(name = "AuditComponentTest",
-immediate = true,
-metatype = true,
-configurationFactory = true,
-policy = ConfigurationPolicy.REQUIRE)
+        immediate = true,
+        metatype = true,
+        configurationFactory = true,
+        policy = ConfigurationPolicy.REQUIRE)
 @Service(AuditComponentTest.class)
 @Properties({
-    @Property(name = "eosgi.testEngine", value = "junit4"),
-    @Property(name = "eosgi.testId", value = "auditTest"),
-    @Property(name = "auditComponent.target"),
-    @Property(name = "dataSource.target"),
-    @Property(name = "sqlTemplates.target")
+        @Property(name = "eosgi.testEngine", value = "junit4"),
+        @Property(name = "eosgi.testId", value = "auditTest"),
+        @Property(name = "auditComponent.target"),
+        @Property(name = "dataSource.target"),
+        @Property(name = "sqlTemplates.target")
 })
 @TestDuringDevelopment
 public class AuditComponentTest {
@@ -125,12 +128,12 @@ public class AuditComponentTest {
         QApplication app = QApplication.auditApplication;
         try (Connection conn = dataSource.getConnection()) {
             Application result = new SQLQuery(conn, sqlTemplates)
-            .from(app)
-            .where(app.applicationName.eq(APPNAME))
-            .uniqueResult(ConstructorExpression.create(Application.class,
-                    app.applicationId,
-                    app.applicationName,
-                    app.resourceId));
+                    .from(app)
+                    .where(app.applicationName.eq(APPNAME))
+                    .uniqueResult(ConstructorExpression.create(Application.class,
+                            app.applicationId,
+                            app.applicationName,
+                            app.resourceId));
             Assert.assertEquals(APPNAME, result.getAppName());
             Assert.assertNotNull(result.getResourceId());
         } catch (SQLException e) {
@@ -174,9 +177,43 @@ public class AuditComponentTest {
 
     @Test
     @TestDuringDevelopment
+    public void findEvents() {
+        Application app = createDefaultApp();
+        Long[] appIds = new Long[] { app.getApplicationId() };
+        EventType[] evtTypes = auditComponent.getOrCreateEventTypes(app.getAppName(), new String[] { "evtType0",
+            "evtType1", "evtType2" });
+        auditComponent.logEvent(new Event("evtType0", APPNAME, new EventData[] { new EventData("strData", "aaa"),
+                new EventData("intData", 10) }));
+        auditComponent.logEvent(new Event("evtType0", APPNAME, new EventData[] { new EventData("strData", "aaa"),
+                new EventData("intData", 20) }));
+        auditComponent.logEvent(new Event("evtType1", APPNAME, new EventData[] { new EventData("strData", "bbb"),
+                new EventData("textData", false, "longtext") }));
+        auditComponent.logEvent(new Event("evtType2", APPNAME, new EventData[] { new EventData("strData", "ccc") }));
+        Long[] eventTypeIds = new Long[] { evtTypes[0].getId(), evtTypes[1].getId() };
+        List<String> dataFields = Arrays.asList("strData", "intData");
+        List<DataFilter> dataFilters = Arrays.asList(new DataFilter(Operator.GT, new EventData("intData", 15)));
+        List<EventUi> actual = auditComponent.findEvents(appIds, eventTypeIds, dataFields, dataFilters, null, null,
+                null, 0, 100);
+        Assert.assertNotNull(actual);
+        Assert.assertEquals(2, actual.size());
+        EventUi firstResult = actual.get(0);
+        Assert.assertEquals("evtType1", firstResult.getName());
+        Assert.assertEquals("bbb", firstResult.getEventData().get("strData").getTextValue());
+        Assert.assertNull(firstResult.getEventData().get("textData"));
+        EventUi secondResult = actual.get(1);
+        Assert.assertEquals("evtType0", secondResult.getName());
+        Assert.assertEquals("aaa", secondResult.getEventData().get("strData").getTextValue());
+        Assert.assertEquals(20.0, secondResult.getEventData().get("intData").getNumberValue(), 0.1);
+    }
+
+    @Test
+    @TestDuringDevelopment
     public void findEventsEmptyResult() {
         long appId = createDefaultApp().getApplicationId();
-        auditComponent.findEvents(new Long[] { new Long(appId) }, null, null, null, null, null, null, 0, 10000);
+        List<EventUi> actual = auditComponent.findEvents(new Long[] { new Long(appId) }, null, null, null, null, null,
+                null, 0, 10000);
+        Assert.assertNotNull(actual);
+        Assert.assertEquals(0, actual.size());
     }
 
     @Test
