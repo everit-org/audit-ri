@@ -163,7 +163,8 @@ public class ComplexEventLoader {
                 .where(buildEventSubqueryPredicate())
                 .offset(offset)
                 .limit(limit);
-        query = query.from(subQuery.list(), evtSubqueryAlias = new QEvent("events"));
+        query = query.from(subQuery.list(evt.eventId, evt.saveTimestamp, evt.eventTypeId),
+                evtSubqueryAlias = new QEvent("events"));
         // query = query.from(evtSubqueryAlias = evt);
     }
 
