@@ -121,7 +121,7 @@ public class AuditComponentTest {
         auditComponent.createApplication(null);
     }
 
-    @Test
+    @Test(timeout = 6000)
     @TestDuringDevelopment
     public void createApplicationSuccess() {
         createDefaultApp();
