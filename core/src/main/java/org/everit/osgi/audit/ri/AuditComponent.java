@@ -16,7 +16,6 @@
  */
 package org.everit.osgi.audit.ri;
 
-import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -25,7 +24,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -62,14 +60,14 @@ import com.mysema.query.sql.dml.SQLInsertClause;
 import com.mysema.query.types.ConstructorExpression;
 
 @Component(name = "AuditComponent",
-        immediate = true,
-        metatype = true,
-        configurationFactory = true,
-        policy = ConfigurationPolicy.REQUIRE)
+immediate = true,
+metatype = true,
+configurationFactory = true,
+policy = ConfigurationPolicy.REQUIRE)
 @Properties({
-        @Property(name = "sqlTemplates.target"),
-        @Property(name = "dataSource.target"),
-        @Property(name = "resourceService.target")
+    @Property(name = "sqlTemplates.target"),
+    @Property(name = "dataSource.target"),
+    @Property(name = "resourceService.target")
 })
 @Service
 public class AuditComponent implements AuditService {
@@ -137,18 +135,18 @@ public class AuditComponent implements AuditService {
             QEventData evtData = QEventData.auditEventData;
             SQLInsertClause insert = new SQLInsertClause(conn, sqlTemplates, evtData);
             insert.set(evtData.eventId, eventId)
-            .set(evtData.eventDataName, eventData.getName())
-            .set(evtData.eventDataType, eventData.getEventDataType().toString());
+                    .set(evtData.eventDataName, eventData.getName())
+                    .set(evtData.eventDataType, eventData.getEventDataType().toString());
             addEventDataValue(insert, eventData);
             insert.execute();
         }
 
         private long insertEventRow() {
             return new SQLInsertClause(conn, sqlTemplates, evt)
-                    .set(evt.resourceId, resourceId)
-                    .set(evt.saveTimestamp, new Timestamp(event.getSaveTimeStamp().getTime()))
-                    .set(evt.eventTypeId, evtType.getId())
-                    .executeWithKey(evt.eventId).longValue();
+            .set(evt.resourceId, resourceId)
+            .set(evt.saveTimestamp, new Timestamp(event.getSaveTimeStamp().getTime()))
+            .set(evt.eventTypeId, evtType.getId())
+            .executeWithKey(evt.eventId).longValue();
         }
     }
 
@@ -208,9 +206,9 @@ public class AuditComponent implements AuditService {
                         insertedResourceId = resourceId;
                     }
                     Long appId = new SQLInsertClause(conn, sqlTemplates, app)
-                            .set(app.resourceId, insertedResourceId)
-                            .set(app.applicationName, appName)
-                            .executeWithKey(app.applicationId);
+                    .set(app.resourceId, insertedResourceId)
+                    .set(app.applicationName, appName)
+                    .executeWithKey(app.applicationId);
                     return new Application(appId, appName, insertedResourceId);
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
@@ -223,10 +221,10 @@ public class AuditComponent implements AuditService {
         try (Connection conn = dataSource.getConnection()) {
             Long resourceId = resourceService.createResource();
             Long eventTypeId = new SQLInsertClause(conn, sqlTemplates, evtType)
-            .set(evtType.name, eventTypeName)
-            .set(evtType.applicationId, app.getApplicationId())
-            .set(evtType.resourceId, resourceId)
-            .executeWithKey(evtType.eventTypeId);
+                    .set(evtType.name, eventTypeName)
+                    .set(evtType.applicationId, app.getApplicationId())
+                    .set(evtType.resourceId, resourceId)
+                    .executeWithKey(evtType.eventTypeId);
             return new EventType(eventTypeId, eventTypeName, app.getApplicationId());
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -238,12 +236,12 @@ public class AuditComponent implements AuditService {
         Objects.requireNonNull(appName, "appName cannot be null");
         try (Connection conn = dataSource.getConnection()) {
             return new SQLQuery(conn, sqlTemplates)
-                    .from(app)
-                    .where(app.applicationName.eq(appName))
-                    .uniqueResult(ConstructorExpression.create(Application.class,
-                            app.applicationId,
-                            app.applicationName,
-                            app.resourceId));
+            .from(app)
+            .where(app.applicationName.eq(appName))
+            .uniqueResult(ConstructorExpression.create(Application.class,
+                    app.applicationId,
+                    app.applicationName,
+                    app.resourceId));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -252,11 +250,11 @@ public class AuditComponent implements AuditService {
     private Application findApplicationByName(final String applicationName) {
         try (Connection conn = dataSource.getConnection()) {
             return new SQLQuery(conn, sqlTemplates)
-            .from(app)
-            .where(app.applicationName.eq(applicationName))
-            .uniqueResult(ConstructorExpression.create(Application.class, app.applicationId,
-                            app.applicationName,
-                            app.resourceId));
+                    .from(app)
+                    .where(app.applicationName.eq(applicationName))
+                    .uniqueResult(ConstructorExpression.create(Application.class, app.applicationId,
+                    app.applicationName,
+                    app.resourceId));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -279,12 +277,12 @@ public class AuditComponent implements AuditService {
     private EventType findEventType(final long applicationId, final String eventTypeName) {
         try (Connection conn = dataSource.getConnection()) {
             return new SQLQuery(conn, sqlTemplates)
-            .from(evtType)
-            .where(evtType.name.eq(eventTypeName).and(evtType.applicationId.eq(applicationId)))
-            .uniqueResult(ConstructorExpression.create(EventType.class,
-                    evtType.eventTypeId,
-                    evtType.name,
-                    evtType.applicationId));
+                    .from(evtType)
+                    .where(evtType.name.eq(eventTypeName).and(evtType.applicationId.eq(applicationId)))
+                    .uniqueResult(ConstructorExpression.create(EventType.class,
+                            evtType.eventTypeId,
+                            evtType.name,
+                            evtType.applicationId));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -294,11 +292,11 @@ public class AuditComponent implements AuditService {
     public List<Application> getApplications() {
         try (Connection conn = dataSource.getConnection()) {
             return new SQLQuery(conn, sqlTemplates)
-                    .from(app)
-                    .listResults(ConstructorExpression.create(Application.class,
-                            app.applicationId,
-                            app.applicationName,
-                            app.resourceId)).getResults();
+            .from(app)
+            .listResults(ConstructorExpression.create(Application.class,
+                    app.applicationId,
+                    app.applicationName,
+                    app.resourceId)).getResults();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -318,13 +316,13 @@ public class AuditComponent implements AuditService {
         Objects.requireNonNull(eventName, "eventName cannot be null");
         try (Connection conn = dataSource.getConnection()) {
             EventType rval = new SQLQuery(conn, sqlTemplates)
-            .from(evtType)
-            .where(evtType.applicationId.eq(selectedAppId))
-            .where(evtType.name.eq(eventName))
-            .uniqueResult(ConstructorExpression.create(EventType.class,
-                    evtType.eventTypeId,
-                    evtType.name,
-                    evtType.applicationId));
+                    .from(evtType)
+                    .where(evtType.applicationId.eq(selectedAppId))
+                    .where(evtType.name.eq(eventName))
+                    .uniqueResult(ConstructorExpression.create(EventType.class,
+                            evtType.eventTypeId,
+                            evtType.name,
+                            evtType.applicationId));
             if (rval == null) {
                 throw new IllegalArgumentException("not event type found for application #" + selectedAppId
                         + " with name [" + eventName + "]");
@@ -339,12 +337,12 @@ public class AuditComponent implements AuditService {
     public List<EventType> getEventTypesByApplication(final long selectedAppId) {
         try (Connection conn = dataSource.getConnection()) {
             return new SQLQuery(conn, sqlTemplates)
-            .from(evtType)
-            .where(evtType.applicationId.eq(selectedAppId))
-            .list(ConstructorExpression.create(EventType.class,
-                    evtType.eventTypeId,
-                    evtType.name,
-                    evtType.applicationId));
+                    .from(evtType)
+                    .where(evtType.applicationId.eq(selectedAppId))
+                    .list(ConstructorExpression.create(EventType.class,
+                            evtType.eventTypeId,
+                            evtType.name,
+                            evtType.applicationId));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -404,13 +402,13 @@ public class AuditComponent implements AuditService {
     public List<FieldWithType> getResultFieldsWithTypes(final Long[] selectedAppId, final Long[] selectedEventTypeId) {
         try (Connection conn = dataSource.getConnection()) {
             List<Tuple> rawResult = new SQLQuery(conn, sqlTemplates)
-            .from(evt)
-            .join(evtData)
-            .on(evt.eventId.eq(evtData.eventId))
-            .join(evtType)
-            .on(evt.eventTypeId.eq(evtType.eventTypeId))
-            .where(evtType.applicationId.in(Arrays.asList(selectedAppId))
-                    .and(evtType.eventTypeId.in(Arrays.asList(selectedEventTypeId))))
+                    .from(evt)
+                    .join(evtData)
+                    .on(evt.eventId.eq(evtData.eventId))
+                    .join(evtType)
+                    .on(evt.eventTypeId.eq(evtType.eventTypeId))
+                    .where(evtType.applicationId.in(Arrays.asList(selectedAppId))
+                            .and(evtType.eventTypeId.in(Arrays.asList(selectedEventTypeId))))
                     .distinct()
                     .list(evtData.eventDataName, evtData.eventDataType);
             List<FieldWithType> rval = new ArrayList<FieldWithType>(rawResult.size());
@@ -427,13 +425,6 @@ public class AuditComponent implements AuditService {
     @Override
     public void logEvent(final Event event) {
         transactionHelper.required(new EventPersister(event));
-    }
-
-    @Override
-    public void logEvent(final String eventName, final String appName,
-            final List<Map<String, Serializable>> eventDataList) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("not implemented");
     }
 
     @Override
