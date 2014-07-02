@@ -67,7 +67,8 @@ policy = ConfigurationPolicy.REQUIRE)
 @Properties({
     @Property(name = "sqlTemplates.target"),
     @Property(name = "dataSource.target"),
-    @Property(name = "resourceService.target")
+    @Property(name = "resourceService.target"),
+    @Property(name = "localizationService.target")
 })
 @Service
 public class AuditComponent implements AuditService {
@@ -170,9 +171,16 @@ public class AuditComponent implements AuditService {
     @Reference
     private TransactionHelper transactionHelper;
 
+    // @Reference
+    // private LocalizationService localizationService;
+
     public void bindDataSource(final DataSource dataSource) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource cannot be null");
     }
+
+    // public void bindLocalizationService(final LocalizationService localizationService) {
+    // this.localizationService = Objects.requireNonNull(localizationService, "localizationService cannot be null");
+    // }
 
     public void bindResourceService(final ResourceService resourceService) {
         this.resourceService = Objects.requireNonNull(resourceService, "resourceService cannot be null");
@@ -266,7 +274,10 @@ public class AuditComponent implements AuditService {
             final List<DataFilter> dataFilters, final Calendar eventsFrom, final Calendar eventsTo,
             final Locale locale, final long offset, final long limit) {
         try (Connection conn = dataSource.getConnection()) {
-            return new ComplexEventLoader(conn, sqlTemplates, selectedAppIds, selectedEventTypeIds, dataFields,
+            return new ComplexEventLoader(conn, sqlTemplates,
+                    // localizationService,
+                    selectedAppIds,
+                    selectedEventTypeIds, dataFields,
                     dataFilters, eventsFrom, eventsTo, locale, offset, limit).loadEvents();
         } catch (SQLException e) {
             throw new RuntimeException(e);

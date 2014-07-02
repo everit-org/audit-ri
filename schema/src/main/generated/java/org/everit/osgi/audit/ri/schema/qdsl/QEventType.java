@@ -49,9 +49,9 @@ public class QEventType extends com.mysema.query.sql.RelationalPathBase<QEventTy
 
     public final com.mysema.query.sql.PrimaryKey<QEventType> auditEventTypePk = createPrimaryKey(eventTypeId);
 
-    public final com.mysema.query.sql.ForeignKey<QApplication> eventTypeApplicationIdFk = createForeignKey(applicationId, "APPLICATION_ID");
-
     public final com.mysema.query.sql.ForeignKey<org.everit.osgi.resource.schema.qdsl.QResource> eventTypeResourceIdFk = createForeignKey(resourceId, "resource_id");
+
+    public final com.mysema.query.sql.ForeignKey<QApplication> eventTypeApplicationIdFk = createForeignKey(applicationId, "APPLICATION_ID");
 
     public final com.mysema.query.sql.ForeignKey<QEvent> _eventEventTypeIdFk = createInvForeignKey(eventTypeId, "EVENT_TYPE_ID");
 

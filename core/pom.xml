@@ -86,11 +86,6 @@
 			<version>4.3.1</version>
 			<scope>provided</scope>
 		</dependency>
-		<!-- <dependency>
-			<groupId>org.everit.osgi</groupId>
-			<artifactId>org.everit.osgi.props</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
-		</dependency> -->
 		<dependency>
 			<groupId>org.everit.osgi</groupId>
   			<artifactId>org.everit.osgi.transaction.helper</artifactId>
@@ -111,6 +106,11 @@
 			<artifactId>org.everit.osgi.audit.ri.schema</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.everit.osgi</groupId> -->
+<!--   			<artifactId>org.everit.osgi.localization</artifactId> -->
+<!--   			<version>1.0.0-SNAPSHOT</version> -->
+<!-- 		</dependency> -->
 	</dependencies>
 
 	<repositories>

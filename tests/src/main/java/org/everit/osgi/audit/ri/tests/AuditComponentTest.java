@@ -67,7 +67,8 @@ import com.mysema.query.types.ConstructorExpression;
         @Property(name = "eosgi.testId", value = "auditTest"),
         @Property(name = "auditComponent.target"),
         @Property(name = "dataSource.target"),
-        @Property(name = "sqlTemplates.target")
+        @Property(name = "sqlTemplates.target"),
+        @Property(name = "localizationService.target")
 })
 @TestDuringDevelopment
 public class AuditComponentTest {

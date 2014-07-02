@@ -56,6 +56,8 @@ public class ComplexEventLoader {
         operatorMapping.put(Operator.STARTS_WITH, Ops.STARTS_WITH);
     }
 
+    // private final LocalizationService localization;
+
     private final Connection conn;
 
     private final SQLTemplates sqlTemplates;
@@ -88,13 +90,16 @@ public class ComplexEventLoader {
 
     private final QApplication app = QApplication.auditApplication;
 
-    public ComplexEventLoader(final Connection conn, final SQLTemplates sqlTemplates, final Long[] selectedAppIds,
+    public ComplexEventLoader(final Connection conn, final SQLTemplates sqlTemplates,
+            // final LocalizationService localizationService,
+            final Long[] selectedAppIds,
             final Long[] selectedEventTypeIds,
             final List<String> dataFields,
             final List<DataFilter> dataFilters, final Calendar eventsFrom, final Calendar eventsTo,
             final Locale locale, final long offset, final long limit) {
         this.conn = Objects.requireNonNull(conn, "conn cannot be null");
         this.sqlTemplates = Objects.requireNonNull(sqlTemplates, "sqlTemplates cannot be null");
+        // this.localization = Objects.requireNonNull(localizationService, "localizationService cannot be null");
         this.selectedAppIds = Arrays.asList(Objects.requireNonNull(selectedAppIds, "selectedAppIds cannot be null"));
         this.selectedEventTypeIds = selectedEventTypeIds == null ? null : Arrays.asList(selectedEventTypeIds);
         this.dataFilters = dataFilters;
@@ -120,6 +125,7 @@ public class ComplexEventLoader {
         subQuery = subQuery.where(buildEventDataSubqueryPredicate());
         query = query.leftJoin(subQuery.list(
                 evtData.eventId,
+                // localization.getLocalizedValue(evtData.eventDataName, locale),
                 evtData.eventDataName,
                 evtData.eventDataType,
                 evtData.numberValue,

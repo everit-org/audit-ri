@@ -22,6 +22,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
         
         <include file="eosgi:org.everit.osgi.resource" />
+<!--         <include file="eosgi:org.everit.osgi.localization.schema" /> -->
         
         <changeSet id="1.0.0" author="everit">
 			<createTable tableName="AUDIT_APPLICATION">
