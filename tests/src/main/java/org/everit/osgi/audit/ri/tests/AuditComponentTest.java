@@ -57,18 +57,18 @@ import com.mysema.query.sql.dml.SQLDeleteClause;
 import com.mysema.query.types.ConstructorExpression;
 
 @Component(name = "AuditComponentTest",
-        immediate = true,
-        metatype = true,
-        configurationFactory = true,
-        policy = ConfigurationPolicy.REQUIRE)
+immediate = true,
+metatype = true,
+configurationFactory = true,
+policy = ConfigurationPolicy.REQUIRE)
 @Service(AuditComponentTest.class)
 @Properties({
-        @Property(name = "eosgi.testEngine", value = "junit4"),
-        @Property(name = "eosgi.testId", value = "auditTest"),
-        @Property(name = "auditComponent.target"),
-        @Property(name = "dataSource.target"),
-        @Property(name = "sqlTemplates.target"),
-        @Property(name = "localizationService.target")
+    @Property(name = "eosgi.testEngine", value = "junit4"),
+    @Property(name = "eosgi.testId", value = "auditTest"),
+    @Property(name = "auditComponent.target"),
+    @Property(name = "dataSource.target"),
+    @Property(name = "sqlTemplates.target"),
+    @Property(name = "localizationService.target")
 })
 @TestDuringDevelopment
 public class AuditComponentTest {
@@ -99,10 +99,10 @@ public class AuditComponentTest {
     @After
     public void cleanupDatabase() {
         try (Connection conn = dataSource.getConnection()) {
-            new SQLDeleteClause(conn, sqlTemplates, QEventData.auditEventData).execute();
-            new SQLDeleteClause(conn, sqlTemplates, QEvent.auditEvent).execute();
-            new SQLDeleteClause(conn, sqlTemplates, QEventType.auditEventType).execute();
-            new SQLDeleteClause(conn, sqlTemplates, QApplication.auditApplication).execute();
+            new SQLDeleteClause(conn, sqlTemplates, new QEventData("evtData")).execute();
+            new SQLDeleteClause(conn, sqlTemplates, new QEvent("evt")).execute();
+            new SQLDeleteClause(conn, sqlTemplates, new QEventType("evtType")).execute();
+            new SQLDeleteClause(conn, sqlTemplates, new QApplication("app")).execute();
             conn.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -126,15 +126,15 @@ public class AuditComponentTest {
     @TestDuringDevelopment
     public void createApplicationSuccess() {
         createDefaultApp();
-        QApplication app = QApplication.auditApplication;
+        QApplication app = new QApplication("app");
         try (Connection conn = dataSource.getConnection()) {
             Application result = new SQLQuery(conn, sqlTemplates)
-                    .from(app)
-                    .where(app.applicationName.eq(APPNAME))
-                    .uniqueResult(ConstructorExpression.create(Application.class,
-                            app.applicationId,
-                            app.applicationName,
-                            app.resourceId));
+            .from(app)
+            .where(app.applicationName.eq(APPNAME))
+            .uniqueResult(ConstructorExpression.create(Application.class,
+                    app.applicationId,
+                    app.applicationName,
+                    app.resourceId));
             Assert.assertEquals(APPNAME, result.getAppName());
             Assert.assertNotNull(result.getResourceId());
         } catch (SQLException e) {
@@ -182,7 +182,7 @@ public class AuditComponentTest {
         Application app = createDefaultApp();
         Long[] appIds = new Long[] { app.getApplicationId() };
         EventType[] evtTypes = auditComponent.getOrCreateEventTypes(app.getAppName(), new String[] { "evtType0",
-            "evtType1", "evtType2" });
+                "evtType1", "evtType2" });
         auditComponent.logEvent(new Event("evtType0", APPNAME, new EventData[] { new EventData("strData", "aaa"),
                 new EventData("intData", 10) }));
         auditComponent.logEvent(new Event("evtType0", APPNAME, new EventData[] { new EventData("strData", "aaa"),
@@ -256,9 +256,10 @@ public class AuditComponentTest {
         Event event = new Event("login", APPNAME, new EventData[] {});
         auditComponent.logEvent(event);
         try (Connection conn = dataSource.getConnection()) {
-            long eventId = new SQLQuery(conn, sqlTemplates).from(QEvent.auditEvent)
-                    .orderBy(QEvent.auditEvent.eventId.desc())
-                    .limit(1).uniqueResult(QEvent.auditEvent.eventId);
+            QEvent evt = new QEvent("evt");
+            long eventId = new SQLQuery(conn, sqlTemplates).from(evt)
+                    .orderBy(evt.eventId.desc())
+                    .limit(1).uniqueResult(evt.eventId);
             EventUi result = auditComponent.getEventById(eventId);
             Assert.assertNotNull(result);
             Assert.assertTrue(result.getEventData().isEmpty());
@@ -383,9 +384,10 @@ public class AuditComponentTest {
         Event event = new Event("login", APPNAME, eventDataArray);
         auditComponent.logEvent(event);
         try (Connection conn = dataSource.getConnection()) {
-            return new SQLQuery(conn, sqlTemplates).from(QEvent.auditEvent)
-                    .orderBy(QEvent.auditEvent.eventId.desc())
-                    .limit(1).uniqueResult(QEvent.auditEvent.eventId);
+            QEvent evt = new QEvent("evt");
+            return new SQLQuery(conn, sqlTemplates).from(evt)
+                    .orderBy(evt.eventId.desc())
+                    .limit(1).uniqueResult(evt.eventId);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -396,12 +398,12 @@ public class AuditComponentTest {
     public void logEvent() {
         createDefaultApp();
         logDefaultEvent();
-        QEvent evt = QEvent.auditEvent;
+        QEvent evt = new QEvent("evt");
         try (Connection conn = dataSource.getConnection()) {
             Long eventId = new SQLQuery(conn, sqlTemplates).from(evt).limit(1)
                     .uniqueResult(ConstructorExpression.create(Long.class, evt.eventId));
             Assert.assertNotNull(eventId);
-            QEventData evtData = QEventData.auditEventData;
+            QEventData evtData = new QEventData("evtData");
             long dataCount = new SQLQuery(conn, sqlTemplates).from(evtData).where(evtData.eventId.eq(eventId)).count();
             Assert.assertEquals(2, dataCount);
         } catch (SQLException e) {

@@ -37,7 +37,21 @@ public class QApplication extends com.mysema.query.sql.RelationalPathBase<QAppli
 
     private static final long serialVersionUID = 685378443;
 
-    public static final QApplication auditApplication = new QApplication("AUDIT_APPLICATION");
+    public static final QApplication application = new QApplication("AUDIT_APPLICATION");
+
+    public class PrimaryKeys {
+
+        public final com.mysema.query.sql.PrimaryKey<QApplication> auditApplicationPk = createPrimaryKey(applicationId);
+
+    }
+
+    public class ForeignKeys {
+
+        public final com.mysema.query.sql.ForeignKey<org.everit.osgi.resource.schema.qdsl.QResource> applicationResourceIdFk = createForeignKey(resourceId, "resource_id");
+
+        public final com.mysema.query.sql.ForeignKey<QEventType> _eventTypeApplicationIdFk = createInvForeignKey(applicationId, "APPLICATION_ID");
+
+    }
 
     public final NumberPath<Long> applicationId = createNumber("applicationId", Long.class);
 
@@ -45,14 +59,12 @@ public class QApplication extends com.mysema.query.sql.RelationalPathBase<QAppli
 
     public final NumberPath<Long> resourceId = createNumber("resourceId", Long.class);
 
-    public final com.mysema.query.sql.PrimaryKey<QApplication> auditApplicationPk = createPrimaryKey(applicationId);
+    public final PrimaryKeys pk = new PrimaryKeys();
 
-    public final com.mysema.query.sql.ForeignKey<org.everit.osgi.resource.schema.qdsl.QResource> applicationResourceIdFk = createForeignKey(resourceId, "resource_id");
-
-    public final com.mysema.query.sql.ForeignKey<QEventType> _eventTypeApplicationIdFk = createInvForeignKey(applicationId, "APPLICATION_ID");
+    public final ForeignKeys fk = new ForeignKeys();
 
     public QApplication(String variable) {
-        super(QApplication.class, forVariable(variable), null, "AUDIT_APPLICATION");
+        super(QApplication.class, forVariable(variable), "org.everit.osgi.audit.ri.schema", "AUDIT_APPLICATION");
         addMetadata();
     }
 
@@ -62,12 +74,12 @@ public class QApplication extends com.mysema.query.sql.RelationalPathBase<QAppli
     }
 
     public QApplication(Path<? extends QApplication> path) {
-        super(path.getType(), path.getMetadata(), null, "AUDIT_APPLICATION");
+        super(path.getType(), path.getMetadata(), "org.everit.osgi.audit.ri.schema", "AUDIT_APPLICATION");
         addMetadata();
     }
 
     public QApplication(PathMetadata<?> metadata) {
-        super(QApplication.class, metadata, null, "AUDIT_APPLICATION");
+        super(QApplication.class, metadata, "org.everit.osgi.audit.ri.schema", "AUDIT_APPLICATION");
         addMetadata();
     }
 

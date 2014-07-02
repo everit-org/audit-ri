@@ -32,9 +32,9 @@ public class MultipleEventQueryResultMapper {
 
     private final List<Tuple> rawResult;
 
-    private final QApplication app = QApplication.auditApplication;
+    private final QApplication app = new QApplication("app");
 
-    private final QEventType evtType = QEventType.auditEventType;
+    private final QEventType evtType = new QEventType("evtType");
 
     private final QEvent evt;
 
@@ -58,10 +58,10 @@ public class MultipleEventQueryResultMapper {
                     rval.add(underConstruction.build());
                 }
                 underConstruction = new EventUi.Builder()
-                .eventId(row.get(evt.eventId))
-                .typeName(row.get(evtType.name))
-                .appName(row.get(app.applicationName))
-                .saveTimestamp(row.get(evt.saveTimestamp));
+                        .eventId(row.get(evt.eventId))
+                        .typeName(row.get(evtType.name))
+                        .appName(row.get(app.applicationName))
+                        .saveTimestamp(row.get(evt.saveTimestamp));
                 prevEventId = eventId;
             }
             rowDataMapper.addEventDataForRow(underConstruction, row);

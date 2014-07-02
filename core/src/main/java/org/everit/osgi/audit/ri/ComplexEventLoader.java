@@ -86,9 +86,9 @@ public class ComplexEventLoader {
 
     private final long limit;
 
-    private final QEventType evtType = QEventType.auditEventType;
+    private final QEventType evtType = new QEventType("evtType");
 
-    private final QApplication app = QApplication.auditApplication;
+    private final QApplication app = new QApplication("app");
 
     public ComplexEventLoader(final Connection conn, final SQLTemplates sqlTemplates,
             // final LocalizationService localizationService,
@@ -120,7 +120,7 @@ public class ComplexEventLoader {
     }
 
     private void buildEventDataSubquery() {
-        QEventData evtData = QEventData.auditEventData;
+        QEventData evtData = new QEventData("evtData");
         SQLSubQuery subQuery = new SQLSubQuery().from(evtData);
         subQuery = subQuery.where(buildEventDataSubqueryPredicate());
         query = query.leftJoin(subQuery.list(
@@ -139,7 +139,7 @@ public class ComplexEventLoader {
     }
 
     private BooleanExpression buildEventDataSubqueryPredicate() {
-        QEventData evtData = QEventData.auditEventData;
+        QEventData evtData = new QEventData("evtData");
         BooleanExpression predicate = Expressions.predicate(Ops.EQ, Expressions.constant(1), Expressions.constant(1));
         if (dataFields != null) {
             predicate = predicate.and(evtData.eventDataName.in(dataFields));
@@ -153,8 +153,8 @@ public class ComplexEventLoader {
     }
 
     private BooleanExpression buildEventSubqueryPredicate() {
-        QEvent evt = QEvent.auditEvent;
-        QEventType evtType = QEventType.auditEventType;
+        QEvent evt = new QEvent("evt");
+        QEventType evtType = new QEventType("evtType");
         BooleanExpression rval = evtType.applicationId.in(selectedAppIds);
         if (selectedEventTypeIds != null) {
             rval = rval.and(evt.eventTypeId.in(selectedEventTypeIds));
@@ -170,8 +170,8 @@ public class ComplexEventLoader {
     }
 
     private void buildFromClause() {
-        QEvent evt = QEvent.auditEvent;
-        QEventType evtType = QEventType.auditEventType;
+        QEvent evt = new QEvent("evt");
+        QEventType evtType = new QEventType("evtType");
         SQLSubQuery subQuery = new SQLSubQuery().from(evt)
                 .leftJoin(evtType).on(evt.eventTypeId.eq(evtType.eventTypeId))
                 .where(buildEventSubqueryPredicate())
@@ -183,7 +183,7 @@ public class ComplexEventLoader {
     }
 
     private BooleanExpression buildPredicateForFilter(final DataFilter dataFilter) {
-        QEventData evtData = QEventData.auditEventData;
+        QEventData evtData = new QEventData("evtData");
         BooleanExpression pred = null;
         Expression<?> field;
         Object value;

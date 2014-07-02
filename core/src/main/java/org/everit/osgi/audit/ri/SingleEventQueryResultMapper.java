@@ -30,23 +30,26 @@ import com.mysema.query.Tuple;
 
 public class SingleEventQueryResultMapper {
 
-    private static final QApplication app = QApplication.auditApplication;
+    private final QApplication app;
 
-    private static final QEventType evtType = QEventType.auditEventType;
+    private final QEventType evtType;
 
-    private static final QEvent evt = QEvent.auditEvent;
+    private final QEvent evt;
 
     private final QEventData evtDataAlias;
 
     private final List<Tuple> result;
 
-    public SingleEventQueryResultMapper(final List<Tuple> result) {
-        this(result, QEventData.auditEventData);
-    }
-
-    public SingleEventQueryResultMapper(final List<Tuple> result, final QEventData evtDataAlias) {
+    public SingleEventQueryResultMapper(final List<Tuple> result,
+            final QEventData evtDataAlias,
+            final QEvent evt,
+            final QEventType evtType,
+            final QApplication app) {
         this.result = Objects.requireNonNull(result, "result cannot be null");
         this.evtDataAlias = Objects.requireNonNull(evtDataAlias, "evtDataAlias cannot be null");
+        this.evt = Objects.requireNonNull(evt, "evt cannot be null");
+        this.evtType = Objects.requireNonNull(evtType, "evtType cannot be null");
+        this.app = Objects.requireNonNull(app, "app cannot be null");
     }
 
     public EventUi mapToEvent() {
@@ -56,10 +59,10 @@ public class SingleEventQueryResultMapper {
         }
         Tuple firstRow = resultIt.next();
         EventUi.Builder builder = new EventUi.Builder()
-                .eventId(firstRow.get(evt.eventId))
-                .typeName(firstRow.get(evtType.name))
-                .appName(firstRow.get(app.applicationName))
-                .saveTimestamp(firstRow.get(evt.saveTimestamp));
+        .eventId(firstRow.get(evt.eventId))
+        .typeName(firstRow.get(evtType.name))
+        .appName(firstRow.get(app.applicationName))
+        .saveTimestamp(firstRow.get(evt.saveTimestamp));
         if (firstRow.get(evtDataAlias.eventDataType) == null) { // no event data belongs to the event
             return builder.build();
         }

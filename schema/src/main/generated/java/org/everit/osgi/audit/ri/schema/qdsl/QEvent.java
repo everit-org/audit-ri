@@ -37,7 +37,23 @@ public class QEvent extends com.mysema.query.sql.RelationalPathBase<QEvent> {
 
     private static final long serialVersionUID = 463503637;
 
-    public static final QEvent auditEvent = new QEvent("AUDIT_EVENT");
+    public static final QEvent event = new QEvent("AUDIT_EVENT");
+
+    public class PrimaryKeys {
+
+        public final com.mysema.query.sql.PrimaryKey<QEvent> auditEventPk = createPrimaryKey(eventId);
+
+    }
+
+    public class ForeignKeys {
+
+        public final com.mysema.query.sql.ForeignKey<org.everit.osgi.resource.schema.qdsl.QResource> eventResourceIdFk = createForeignKey(resourceId, "resource_id");
+
+        public final com.mysema.query.sql.ForeignKey<QEventType> eventEventTypeIdFk = createForeignKey(eventTypeId, "EVENT_TYPE_ID");
+
+        public final com.mysema.query.sql.ForeignKey<QEventData> _eventDataEventIdFk = createInvForeignKey(eventId, "EVENT_ID");
+
+    }
 
     public final NumberPath<Long> eventId = createNumber("eventId", Long.class);
 
@@ -47,16 +63,12 @@ public class QEvent extends com.mysema.query.sql.RelationalPathBase<QEvent> {
 
     public final DateTimePath<java.sql.Timestamp> saveTimestamp = createDateTime("saveTimestamp", java.sql.Timestamp.class);
 
-    public final com.mysema.query.sql.PrimaryKey<QEvent> auditEventPk = createPrimaryKey(eventId);
+    public final PrimaryKeys pk = new PrimaryKeys();
 
-    public final com.mysema.query.sql.ForeignKey<org.everit.osgi.resource.schema.qdsl.QResource> eventResourceIdFk = createForeignKey(resourceId, "resource_id");
-
-    public final com.mysema.query.sql.ForeignKey<QEventType> eventEventTypeIdFk = createForeignKey(eventTypeId, "EVENT_TYPE_ID");
-
-    public final com.mysema.query.sql.ForeignKey<QEventData> _eventDataEventIdFk = createInvForeignKey(eventId, "EVENT_ID");
+    public final ForeignKeys fk = new ForeignKeys();
 
     public QEvent(String variable) {
-        super(QEvent.class, forVariable(variable), null, "AUDIT_EVENT");
+        super(QEvent.class, forVariable(variable), "org.everit.osgi.audit.ri.schema", "AUDIT_EVENT");
         addMetadata();
     }
 
@@ -66,12 +78,12 @@ public class QEvent extends com.mysema.query.sql.RelationalPathBase<QEvent> {
     }
 
     public QEvent(Path<? extends QEvent> path) {
-        super(path.getType(), path.getMetadata(), null, "AUDIT_EVENT");
+        super(path.getType(), path.getMetadata(), "org.everit.osgi.audit.ri.schema", "AUDIT_EVENT");
         addMetadata();
     }
 
     public QEvent(PathMetadata<?> metadata) {
-        super(QEvent.class, metadata, null, "AUDIT_EVENT");
+        super(QEvent.class, metadata, "org.everit.osgi.audit.ri.schema", "AUDIT_EVENT");
         addMetadata();
     }
 

@@ -34,13 +34,13 @@ import com.mysema.query.types.expr.BooleanExpression;
 
 public class SingleEventLoader {
 
-    private final QApplication app = QApplication.auditApplication;
+    private final QApplication app = new QApplication("app");
 
-    private final QEventType evtType = QEventType.auditEventType;
+    private final QEventType evtType = new QEventType("evtType");
 
-    private final QEvent evt = QEvent.auditEvent;
+    private final QEvent evt = new QEvent("evt");
 
-    private QEventData evtData = QEventData.auditEventData;
+    private QEventData evtData = new QEventData("evtData");
 
     private final Connection conn;
 
@@ -110,11 +110,13 @@ public class SingleEventLoader {
     }
 
     public EventUi loadEvent(final long eventId) {
-        return new SingleEventQueryResultMapper(singleEventQuery(eventId, null, null), evtData).mapToEvent();
+        return new SingleEventQueryResultMapper(singleEventQuery(eventId, null, null), evtData, evt, evtType, app)
+        .mapToEvent();
     }
 
     public EventUi loadEvent(final long eventId, final BooleanExpression eventDataPred) {
-        return new SingleEventQueryResultMapper(singleEventQuery(eventId, null, eventDataPred), evtData).mapToEvent();
+        return new SingleEventQueryResultMapper(singleEventQuery(eventId, null, eventDataPred),
+                evtData, evt, evtType, app).mapToEvent();
     }
 
     private List<Tuple> singleEventQuery(final long eventId, final BooleanExpression additionalPred,

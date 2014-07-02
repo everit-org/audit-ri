@@ -88,7 +88,7 @@ public class AuditComponent implements AuditService {
         }
 
         private void addEventDataValue(final SQLInsertClause insert, final EventData eventData) {
-            QEventData evtData = QEventData.auditEventData;
+            QEventData evtData = new QEventData("evtData");
             try {
                 switch (eventData.getEventDataType()) {
                 case NUMBER:
@@ -133,7 +133,7 @@ public class AuditComponent implements AuditService {
         }
 
         private void insertEventDataRow(final long eventId, final EventData eventData) {
-            QEventData evtData = QEventData.auditEventData;
+            QEventData evtData = new QEventData("evtData");
             SQLInsertClause insert = new SQLInsertClause(conn, sqlTemplates, evtData);
             insert.set(evtData.eventId, eventId)
                     .set(evtData.eventDataName, eventData.getName())
@@ -151,13 +151,13 @@ public class AuditComponent implements AuditService {
         }
     }
 
-    private static final QApplication app = QApplication.auditApplication;
+    private static final QApplication app = new QApplication("app");
 
-    private static final QEventType evtType = QEventType.auditEventType;
+    private static final QEventType evtType = new QEventType("evtType");
 
-    private static final QEvent evt = QEvent.auditEvent;
+    private static final QEvent evt = new QEvent("evt");
 
-    private static final QEventData evtData = QEventData.auditEventData;
+    private static final QEventData evtData = new QEventData("evtData");
 
     @Reference
     private SQLTemplates sqlTemplates;

@@ -37,7 +37,19 @@ public class QEventData extends com.mysema.query.sql.RelationalPathBase<QEventDa
 
     private static final long serialVersionUID = 1723880031;
 
-    public static final QEventData auditEventData = new QEventData("AUDIT_EVENT_DATA");
+    public static final QEventData eventData = new QEventData("AUDIT_EVENT_DATA");
+
+    public class PrimaryKeys {
+
+        public final com.mysema.query.sql.PrimaryKey<QEventData> auditEventDataPk = createPrimaryKey(eventDataId);
+
+    }
+
+    public class ForeignKeys {
+
+        public final com.mysema.query.sql.ForeignKey<QEvent> eventDataEventIdFk = createForeignKey(eventId, "EVENT_ID");
+
+    }
 
     public final SimplePath<java.sql.Blob> binaryValue = createSimple("binaryValue", java.sql.Blob.class);
 
@@ -57,12 +69,12 @@ public class QEventData extends com.mysema.query.sql.RelationalPathBase<QEventDa
 
     public final DateTimePath<java.sql.Timestamp> timestampValue = createDateTime("timestampValue", java.sql.Timestamp.class);
 
-    public final com.mysema.query.sql.PrimaryKey<QEventData> auditEventDataPk = createPrimaryKey(eventDataId);
+    public final PrimaryKeys pk = new PrimaryKeys();
 
-    public final com.mysema.query.sql.ForeignKey<QEvent> eventDataEventIdFk = createForeignKey(eventId, "EVENT_ID");
+    public final ForeignKeys fk = new ForeignKeys();
 
     public QEventData(String variable) {
-        super(QEventData.class, forVariable(variable), null, "AUDIT_EVENT_DATA");
+        super(QEventData.class, forVariable(variable), "org.everit.osgi.audit.ri.schema", "AUDIT_EVENT_DATA");
         addMetadata();
     }
 
@@ -72,12 +84,12 @@ public class QEventData extends com.mysema.query.sql.RelationalPathBase<QEventDa
     }
 
     public QEventData(Path<? extends QEventData> path) {
-        super(path.getType(), path.getMetadata(), null, "AUDIT_EVENT_DATA");
+        super(path.getType(), path.getMetadata(), "org.everit.osgi.audit.ri.schema", "AUDIT_EVENT_DATA");
         addMetadata();
     }
 
     public QEventData(PathMetadata<?> metadata) {
-        super(QEventData.class, metadata, null, "AUDIT_EVENT_DATA");
+        super(QEventData.class, metadata, "org.everit.osgi.audit.ri.schema", "AUDIT_EVENT_DATA");
         addMetadata();
     }
 
