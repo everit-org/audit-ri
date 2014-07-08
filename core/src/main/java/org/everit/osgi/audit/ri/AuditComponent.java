@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 import javax.sql.rowset.serial.SerialBlob;
@@ -50,7 +51,6 @@ import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventType;
 import org.everit.osgi.resource.api.ResourceService;
-import org.everit.osgi.transaction.helper.api.Callback;
 import org.everit.osgi.transaction.helper.api.TransactionHelper;
 
 import com.mysema.query.Tuple;
@@ -73,7 +73,7 @@ policy = ConfigurationPolicy.REQUIRE)
 @Service
 public class AuditComponent implements AuditService {
 
-    private final class EventPersister implements Callback<Void> {
+    private final class EventPersister implements Supplier<Void> {
 
         private final Event event;
 
@@ -113,7 +113,7 @@ public class AuditComponent implements AuditService {
         }
 
         @Override
-        public Void execute() {
+        public Void get() {
             resourceId = resourceService.createResource();
             evtType = getOrCreateEventType(event.getApplicationName(), event.getName());
             try {
@@ -186,25 +186,21 @@ public class AuditComponent implements AuditService {
     @Override
     public Application createApplication(final String appName, final Long resourceId) {
         Objects.requireNonNull(appName, "appName cannot be null");
-        return transactionHelper.required(new Callback<Application>() {
-
-            @Override
-            public Application execute() {
-                try (Connection conn = dataSource.getConnection()) {
-                    Long insertedResourceId;
-                    if (resourceId == null) {
-                        insertedResourceId = resourceService.createResource();
-                    } else {
-                        insertedResourceId = resourceId;
-                    }
-                    Long appId = new SQLInsertClause(conn, sqlTemplates, app)
-                    .set(app.resourceId, insertedResourceId)
-                    .set(app.applicationName, appName)
-                    .executeWithKey(app.applicationId);
-                    return new Application(appId, appName, insertedResourceId);
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
+        return transactionHelper.required(() -> {
+            try (Connection conn = dataSource.getConnection()) {
+                Long insertedResourceId;
+                if (resourceId == null) {
+                    insertedResourceId = resourceService.createResource();
+                } else {
+                    insertedResourceId = resourceId;
                 }
+                Long appId = new SQLInsertClause(conn, sqlTemplates, app)
+                .set(app.resourceId, insertedResourceId)
+                .set(app.applicationName, appName)
+                .executeWithKey(app.applicationId);
+                return new Application(appId, appName, insertedResourceId);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
         });
     }
@@ -353,21 +349,16 @@ public class AuditComponent implements AuditService {
     public EventType getOrCreateEventType(final String applicationName, final String eventTypeName) {
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
         Objects.requireNonNull(eventTypeName, "eventTypeName cannot be null");
-        return transactionHelper.required(new Callback<EventType>() {
-
-            @Override
-            public EventType execute() {
-                Application app = findApplicationByName(applicationName);
-                if (app == null) {
-                    throw new IllegalArgumentException("application [" + applicationName + "] does not exist");
-                }
-                EventType existing = findEventType(app.getApplicationId(), eventTypeName);
-                if (existing != null) {
-                    return existing;
-                }
-                return createEventType(app, eventTypeName);
+        return transactionHelper.required(() -> {
+            Application app = findApplicationByName(applicationName);
+            if (app == null) {
+                throw new IllegalArgumentException("application [" + applicationName + "] does not exist");
             }
-
+            EventType existing = findEventType(app.getApplicationId(), eventTypeName);
+            if (existing != null) {
+                return existing;
+            }
+            return createEventType(app, eventTypeName);
         });
     }
 
@@ -375,21 +366,17 @@ public class AuditComponent implements AuditService {
     public EventType[] getOrCreateEventTypes(final String applicationName, final String[] eventTypeNames) {
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
         Objects.requireNonNull(eventTypeNames, "eventTypeNames cannot be null");
-        return transactionHelper.required(new Callback<EventType[]>() {
-
-            @Override
-            public EventType[] execute() {
-                Application app = findAppByName(applicationName);
-                if (app == null) {
-                    throw new IllegalArgumentException("application [" + applicationName + "] does not exist");
-                }
-                EventType[] rval = new EventType[eventTypeNames.length];
-                int idx = 0;
-                for (String typeName : eventTypeNames) {
-                    rval[idx++] = getOrCreateEventType(applicationName, typeName);
-                }
-                return rval;
+        return transactionHelper.required(() -> {
+            Application app = findAppByName(applicationName);
+            if (app == null) {
+                throw new IllegalArgumentException("application [" + applicationName + "] does not exist");
             }
+            EventType[] rval = new EventType[eventTypeNames.length];
+            int idx = 0;
+            for (String typeName : eventTypeNames) {
+                rval[idx++] = getOrCreateEventType(applicationName, typeName);
+            }
+            return rval;
         });
     }
 
@@ -409,7 +396,7 @@ public class AuditComponent implements AuditService {
             List<FieldWithType> rval = new ArrayList<FieldWithType>(rawResult.size());
             for (Tuple row : rawResult) {
                 EventDataType dataType = EventDataType.valueOf(row.get(evtData.eventDataType));
-                new FieldWithType(row.get(evtData.eventDataName), dataType, null);
+                rval.add(new FieldWithType(row.get(evtData.eventDataName), dataType, null));
             }
             return rval;
         } catch (SQLException e) {
