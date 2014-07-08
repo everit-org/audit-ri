@@ -21,11 +21,13 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.everit.osgi.audit.api.dto.DataFilter;
 import org.everit.osgi.audit.api.dto.EventData;
@@ -72,9 +74,9 @@ public class ComplexEventLoader {
 
     private final Collection<Long> selectedEventTypeIds;
 
-    private final List<String> dataFields;
+    private final Optional<List<String>> dataFields;
 
-    private final List<DataFilter> dataFilters;
+    private final Optional<List<DataFilter>> dataFilters;
 
     private final Calendar eventsFrom;
 
@@ -102,8 +104,8 @@ public class ComplexEventLoader {
         // this.localization = Objects.requireNonNull(localizationService, "localizationService cannot be null");
         this.selectedAppIds = Arrays.asList(Objects.requireNonNull(selectedAppIds, "selectedAppIds cannot be null"));
         this.selectedEventTypeIds = selectedEventTypeIds == null ? null : Arrays.asList(selectedEventTypeIds);
-        this.dataFilters = dataFilters;
-        this.dataFields = dataFields;
+        this.dataFilters = Optional.ofNullable(dataFilters);
+        this.dataFields = Optional.ofNullable(dataFields);
         this.eventsFrom = eventsFrom;
         this.eventsTo = eventsTo;
         this.locale = locale;
@@ -140,16 +142,13 @@ public class ComplexEventLoader {
 
     private BooleanExpression buildEventDataSubqueryPredicate() {
         QEventData evtData = new QEventData("evtData");
-        BooleanExpression predicate = Expressions.predicate(Ops.EQ, Expressions.constant(1), Expressions.constant(1));
-        if (dataFields != null) {
-            predicate = predicate.and(evtData.eventDataName.in(dataFields));
-        }
-        if (dataFilters != null) {
-            for (DataFilter dataFilter : dataFilters) {
-                predicate = predicate.and(buildPredicateForFilter(dataFilter));
-            }
-        }
-        return predicate;
+        BooleanExpression fieldPredicate = dataFields
+                .map((fields) -> evtData.eventDataName.in(fields))
+                .orElseGet(() -> Expressions.predicate(Ops.EQ, Expressions.constant(1), Expressions.constant(1)));
+        return dataFilters.orElseGet(Collections::emptyList)
+                .stream()
+                .map(this::buildPredicateForFilter)
+                .reduce(fieldPredicate, (pred1, pred2) -> pred1.and(pred2));
     }
 
     private BooleanExpression buildEventSubqueryPredicate() {

@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.everit.osgi.audit.api.dto.EventDataType;
 import org.everit.osgi.audit.api.dto.EventUi.Builder;
@@ -52,10 +53,8 @@ public class EventDataRowMapper {
     void addEventDataForRow(final Builder builder, final Tuple row) {
         Objects.requireNonNull(builder, "builder cannot be null");
         Objects.requireNonNull(row, "row cannot be null");
-        String type = row.get(evtDataAlias.eventDataType);
-        if (type == null) {
-            throw new IllegalArgumentException("row has null value for eventData.eventDataType");
-        }
+        String type = Optional.ofNullable(row.get(evtDataAlias.eventDataType))
+                .orElseThrow(() -> new IllegalArgumentException("row has null value for eventData.eventDataType"));
         String dataName = row.get(evtDataAlias.eventDataName);
         if (type.equals(EventDataType.BINARY.toString())) {
             addBlobData(builder, dataName, row);

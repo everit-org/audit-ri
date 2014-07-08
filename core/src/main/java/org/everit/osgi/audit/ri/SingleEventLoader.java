@@ -56,24 +56,24 @@ public class SingleEventLoader {
     private QEventData addFilteredEventDataSubquery(final BooleanExpression eventDataPred) {
         QEventData evtDataAlias = new QEventData("datas");
         query.leftJoin(new SQLSubQuery()
-                .from(evtData)
-                .where(eventDataPred)
-                .list(evtData.eventId,
-                        evtData.eventDataName,
-                        evtData.eventDataType,
-                        evtData.numberValue,
-                        evtData.stringValue,
-                        evtData.textValue,
-                        evtData.timestampValue,
-                        evtData.binaryValue), evtDataAlias).on(evt.eventId.eq(evtDataAlias.eventId));
+        .from(evtData)
+        .where(eventDataPred)
+        .list(evtData.eventId,
+                evtData.eventDataName,
+                evtData.eventDataType,
+                evtData.numberValue,
+                evtData.stringValue,
+                evtData.textValue,
+                evtData.timestampValue,
+                evtData.binaryValue), evtDataAlias).on(evt.eventId.eq(evtDataAlias.eventId));
         return evtDataAlias;
     }
 
     private void constructBaseQuery() {
         query = new SQLQuery(conn, sqlTemplates)
-                .from(evt)
-                .join(evtType).on(evt.eventTypeId.eq(evtType.eventTypeId))
-                .join(app).on(app.applicationId.eq(evtType.applicationId));
+        .from(evt)
+        .join(evtType).on(evt.eventTypeId.eq(evtType.eventTypeId))
+        .join(app).on(app.applicationId.eq(evtType.applicationId));
     }
 
     private void constructWhereCondition(final BooleanExpression additionalPred,
@@ -111,7 +111,7 @@ public class SingleEventLoader {
 
     public EventUi loadEvent(final long eventId) {
         return new SingleEventQueryResultMapper(singleEventQuery(eventId, null, null), evtData, evt, evtType, app)
-        .mapToEvent();
+                .mapToEvent();
     }
 
     public EventUi loadEvent(final long eventId, final BooleanExpression eventDataPred) {
