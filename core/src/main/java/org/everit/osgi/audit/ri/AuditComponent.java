@@ -159,45 +159,29 @@ public class AuditComponent implements AuditService {
 
     private static final QEventData evtData = new QEventData("evtData");
 
-    @Reference
+    @Reference(bind = "setSqlTemplates")
     private SQLTemplates sqlTemplates;
 
-    @Reference
+    @Reference(bind = "setDataSource")
     private DataSource dataSource;
 
-    @Reference
+    @Reference(bind = "setResourceService")
     private ResourceService resourceService;
 
-    @Reference
+    @Reference(bind = "setTransactionHelper")
     private TransactionHelper transactionHelper;
 
     // @Reference
     // private LocalizationService localizationService;
 
-    public void bindDataSource(final DataSource dataSource) {
-        this.dataSource = Objects.requireNonNull(dataSource, "dataSource cannot be null");
+    @Override
+    public Application createApplication(final String appName) {
+        return createApplication(appName, null);
     }
 
     // public void bindLocalizationService(final LocalizationService localizationService) {
     // this.localizationService = Objects.requireNonNull(localizationService, "localizationService cannot be null");
     // }
-
-    public void bindResourceService(final ResourceService resourceService) {
-        this.resourceService = Objects.requireNonNull(resourceService, "resourceService cannot be null");
-    }
-
-    public void bindSqlTemplates(final SQLTemplates sqlTemplates) {
-        this.sqlTemplates = Objects.requireNonNull(sqlTemplates, "sqlTemplates cannot be null");
-    }
-
-    public void bindTransactionHelper(final TransactionHelper transactionHelper) {
-        this.transactionHelper = Objects.requireNonNull(transactionHelper, "transactionHelper cannot be null");
-    }
-
-    @Override
-    public Application createApplication(final String appName) {
-        return createApplication(appName, null);
-    }
 
     @Override
     public Application createApplication(final String appName, final Long resourceId) {
@@ -446,6 +430,22 @@ public class AuditComponent implements AuditService {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void setDataSource(final DataSource dataSource) {
+        this.dataSource = Objects.requireNonNull(dataSource, "dataSource cannot be null");
+    }
+
+    public void setResourceService(final ResourceService resourceService) {
+        this.resourceService = Objects.requireNonNull(resourceService, "resourceService cannot be null");
+    }
+
+    public void setSqlTemplates(final SQLTemplates sqlTemplates) {
+        this.sqlTemplates = Objects.requireNonNull(sqlTemplates, "sqlTemplates cannot be null");
+    }
+
+    public void setTransactionHelper(final TransactionHelper transactionHelper) {
+        this.transactionHelper = Objects.requireNonNull(transactionHelper, "transactionHelper cannot be null");
     }
 
 }
