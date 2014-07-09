@@ -16,10 +16,11 @@
  */
 package org.everit.osgi.audit.ri;
 
+import static org.everit.osgi.audit.ri.AuditComponent.instantToTimestamp;
+
 import java.sql.Connection;
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,9 +79,9 @@ public class ComplexEventLoader {
 
     private final Optional<List<DataFilter>> dataFilters;
 
-    private final Calendar eventsFrom;
+    private final Instant eventsFrom;
 
-    private final Calendar eventsTo;
+    private final Instant eventsTo;
 
     private final Locale locale;
 
@@ -97,7 +98,7 @@ public class ComplexEventLoader {
             final Long[] selectedAppIds,
             final Long[] selectedEventTypeIds,
             final List<String> dataFields,
-            final List<DataFilter> dataFilters, final Calendar eventsFrom, final Calendar eventsTo,
+            final List<DataFilter> dataFilters, final Instant eventsFrom, final Instant eventsTo,
             final Locale locale, final long offset, final long limit) {
         this.conn = Objects.requireNonNull(conn, "conn cannot be null");
         this.sqlTemplates = Objects.requireNonNull(sqlTemplates, "sqlTemplates cannot be null");
@@ -115,10 +116,6 @@ public class ComplexEventLoader {
 
     private void addOrderBy() {
         query = query.orderBy(evtSubqueryAlias.saveTimestamp.desc(), evtSubqueryAlias.eventId.asc());
-    }
-
-    private Timestamp asTimestamp(final Calendar cal) {
-        return new Timestamp(cal.getTimeInMillis());
     }
 
     private void buildEventDataSubquery() {
@@ -159,11 +156,11 @@ public class ComplexEventLoader {
             rval = rval.and(evt.eventTypeId.in(selectedEventTypeIds));
         }
         if (eventsFrom != null && eventsTo != null) {
-            rval = rval.and(evt.saveTimestamp.between(asTimestamp(eventsFrom), asTimestamp(eventsTo)));
+            rval = rval.and(evt.saveTimestamp.between(instantToTimestamp(eventsFrom), instantToTimestamp(eventsTo)));
         } else if (eventsFrom != null) {
-            rval = rval.and(evt.saveTimestamp.gt(asTimestamp(eventsFrom)));
+            rval = rval.and(evt.saveTimestamp.gt(instantToTimestamp(eventsFrom)));
         } else if (eventsTo != null) {
-            rval = rval.and(evt.saveTimestamp.lt(asTimestamp(eventsTo)));
+            rval = rval.and(evt.saveTimestamp.lt(instantToTimestamp(eventsTo)));
         }
         return rval;
     }
@@ -202,7 +199,7 @@ public class ComplexEventLoader {
             break;
         case TIMESTAMP:
             field = evtData.timestampValue;
-            value = asTimestamp(operands.getTimestampValue());
+            value = instantToTimestamp(operands.getTimestampValue());
             break;
         case BINARY:
         default:

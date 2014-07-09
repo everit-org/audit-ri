@@ -16,6 +16,8 @@
  */
 package org.everit.osgi.audit.ri;
 
+import static org.everit.osgi.audit.ri.AuditComponent.timestampToInstant;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -59,10 +61,10 @@ public class SingleEventQueryResultMapper {
         }
         Tuple firstRow = resultIt.next();
         EventUi.Builder builder = new EventUi.Builder()
-        .eventId(firstRow.get(evt.eventId))
-        .typeName(firstRow.get(evtType.name))
-        .appName(firstRow.get(app.applicationName))
-        .saveTimestamp(firstRow.get(evt.saveTimestamp));
+                .eventId(firstRow.get(evt.eventId))
+                .typeName(firstRow.get(evtType.name))
+                .appName(firstRow.get(app.applicationName))
+                .saveTimestamp(timestampToInstant(firstRow.get(evt.saveTimestamp)));
         if (firstRow.get(evtDataAlias.eventDataType) == null) { // no event data belongs to the event
             return builder.build();
         }

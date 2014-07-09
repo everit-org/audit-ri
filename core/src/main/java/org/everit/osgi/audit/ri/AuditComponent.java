@@ -19,8 +19,8 @@ package org.everit.osgi.audit.ri;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -106,7 +106,7 @@ public class AuditComponent implements AuditService {
                     insert.set(evtData.binaryValue, new SerialBlob(eventData.getBinaryValue()));
                     break;
                 case TIMESTAMP:
-                    insert.set(evtData.timestampValue, new Timestamp(eventData.getTimestampValue().getTimeInMillis()));
+                    insert.set(evtData.timestampValue, instantToTimestamp(eventData.getTimestampValue()));
                     break;
                 }
             } catch (SQLException e) {
@@ -145,10 +145,20 @@ public class AuditComponent implements AuditService {
         private long insertEventRow() {
             return new SQLInsertClause(conn, sqlTemplates, evt)
                     .set(evt.resourceId, resourceId)
-                    .set(evt.saveTimestamp, new Timestamp(event.getSaveTimeStamp().getTime()))
+                    .set(evt.saveTimestamp, instantToTimestamp(event.getSaveTimeStamp()))
                     .set(evt.eventTypeId, evtType.getId())
                     .executeWithKey(evt.eventId).longValue();
         }
+    }
+
+    static final Timestamp instantToTimestamp(final Instant inst) {
+        Timestamp rval = new Timestamp(inst.getEpochSecond() * 1000);
+        rval.setNanos(inst.getNano());
+        return rval;
+    }
+
+    static final Instant timestampToInstant(final Timestamp timestamp) {
+        return Instant.ofEpochSecond(timestamp.getTime() / 1000, timestamp.getNanos());
     }
 
     private static final QApplication app = new QApplication("app");
@@ -246,7 +256,7 @@ public class AuditComponent implements AuditService {
     @Override
     public List<EventUi> findEvents(final Long[] selectedAppIds, final Long[] selectedEventTypeIds,
             final List<String> dataFields,
-            final List<DataFilter> dataFilters, final Calendar eventsFrom, final Calendar eventsTo,
+            final List<DataFilter> dataFilters, final Instant eventsFrom, final Instant eventsTo,
             final Locale locale, final long offset, final long limit) {
         try (Connection conn = dataSource.getConnection()) {
             return new ComplexEventLoader(conn, sqlTemplates,

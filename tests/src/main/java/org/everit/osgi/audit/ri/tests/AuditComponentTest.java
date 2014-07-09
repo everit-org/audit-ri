@@ -57,18 +57,18 @@ import com.mysema.query.sql.dml.SQLDeleteClause;
 import com.mysema.query.types.ConstructorExpression;
 
 @Component(name = "AuditComponentTest",
-immediate = true,
-metatype = true,
-configurationFactory = true,
-policy = ConfigurationPolicy.REQUIRE)
+        immediate = true,
+        metatype = true,
+        configurationFactory = true,
+        policy = ConfigurationPolicy.REQUIRE)
 @Service(AuditComponentTest.class)
 @Properties({
-    @Property(name = "eosgi.testEngine", value = "junit4"),
-    @Property(name = "eosgi.testId", value = "auditTest"),
-    @Property(name = "auditComponent.target"),
-    @Property(name = "dataSource.target"),
-    @Property(name = "sqlTemplates.target"),
-    @Property(name = "localizationService.target")
+        @Property(name = "eosgi.testEngine", value = "junit4"),
+        @Property(name = "eosgi.testId", value = "auditTest"),
+        @Property(name = "auditComponent.target"),
+        @Property(name = "dataSource.target"),
+        @Property(name = "sqlTemplates.target"),
+        @Property(name = "localizationService.target")
 })
 @TestDuringDevelopment
 public class AuditComponentTest {
@@ -129,12 +129,12 @@ public class AuditComponentTest {
         QApplication app = new QApplication("app");
         try (Connection conn = dataSource.getConnection()) {
             Application result = new SQLQuery(conn, sqlTemplates)
-            .from(app)
-            .where(app.applicationName.eq(APPNAME))
-            .uniqueResult(ConstructorExpression.create(Application.class,
-                    app.applicationId,
-                    app.applicationName,
-                    app.resourceId));
+                    .from(app)
+                    .where(app.applicationName.eq(APPNAME))
+                    .uniqueResult(ConstructorExpression.create(Application.class,
+                            app.applicationId,
+                            app.applicationName,
+                            app.resourceId));
             Assert.assertEquals(APPNAME, result.getAppName());
             Assert.assertNotNull(result.getResourceId());
         } catch (SQLException e) {
@@ -182,7 +182,7 @@ public class AuditComponentTest {
         Application app = createDefaultApp();
         Long[] appIds = new Long[] { app.getApplicationId() };
         EventType[] evtTypes = auditComponent.getOrCreateEventTypes(app.getAppName(), new String[] { "evtType0",
-                "evtType1", "evtType2" });
+            "evtType1", "evtType2" });
         auditComponent.logEvent(new Event("evtType0", APPNAME, new EventData[] { new EventData("strData", "aaa"),
                 new EventData("intData", 10) }));
         auditComponent.logEvent(new Event("evtType0", APPNAME, new EventData[] { new EventData("strData", "aaa"),

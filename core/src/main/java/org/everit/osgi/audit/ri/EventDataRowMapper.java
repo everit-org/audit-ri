@@ -18,8 +18,8 @@ package org.everit.osgi.audit.ri;
 
 import java.sql.Blob;
 import java.sql.SQLException;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -65,9 +65,8 @@ public class EventDataRowMapper {
         } else if (type.equals(EventDataType.NUMBER.toString())) {
             builder.numberData(dataName, row.get(evtDataAlias.numberValue));
         } else if (type.equals(EventDataType.TIMESTAMP)) {
-            Calendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(row.get(evtDataAlias.timestampValue).getTime());
-            builder.timestampData(dataName, calendar);
+            Timestamp timestamp = row.get(evtDataAlias.timestampValue);
+            builder.timestampData(dataName, Instant.ofEpochSecond(timestamp.getTime() / 1000, timestamp.getNanos()));
         } else {
             throw new IllegalStateException("unknown event data type: " + type);
         }
