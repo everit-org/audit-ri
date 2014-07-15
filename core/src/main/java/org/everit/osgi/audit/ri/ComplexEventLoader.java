@@ -30,10 +30,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.everit.osgi.audit.api.dto.DataFilter;
-import org.everit.osgi.audit.api.dto.EventData;
-import org.everit.osgi.audit.api.dto.EventUi;
-import org.everit.osgi.audit.api.dto.Operator;
+import org.everit.osgi.audit.dto.DataFilter;
+import org.everit.osgi.audit.dto.EventData;
+import org.everit.osgi.audit.dto.EventUi;
+import org.everit.osgi.audit.dto.Operator;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;

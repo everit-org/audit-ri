@@ -20,7 +20,7 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Objects;
 
-import org.everit.osgi.audit.api.dto.EventUi;
+import org.everit.osgi.audit.dto.EventUi;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;

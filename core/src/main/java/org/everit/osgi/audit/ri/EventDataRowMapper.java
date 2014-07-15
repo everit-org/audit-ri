@@ -23,8 +23,8 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.everit.osgi.audit.api.dto.EventDataType;
-import org.everit.osgi.audit.api.dto.EventUi.Builder;
+import org.everit.osgi.audit.dto.EventDataType;
+import org.everit.osgi.audit.dto.EventUi.Builder;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;
 
 import com.mysema.query.Tuple;
