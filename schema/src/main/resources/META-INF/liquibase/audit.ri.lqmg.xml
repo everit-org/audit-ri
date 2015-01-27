@@ -18,22 +18,22 @@
 
 -->
 <lqmg xmlns="http://everit.org/lqmg" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" defaultPackage="org.everit.osgi.audit.ri.schema.qdsl">
-	<namingRules>
-		<classNameRule>
-			<entity>AUDIT_APPLICATION</entity>
-			<class>Application</class>
-		</classNameRule>
-		<classNameRule>
-			<entity>AUDIT_EVENT_TYPE</entity>
-			<class>EventType</class>
-		</classNameRule>
-		<classNameRule>
-			<entity>AUDIT_EVENT</entity>
-			<class>Event</class>
-		</classNameRule>
-		<classNameRule>
-			<entity>AUDIT_EVENT_DATA</entity>
-			<class>EventData</class>
-		</classNameRule>
-	</namingRules>
+  <namingRules>
+    <classNameRule>
+      <entity>audit_application</entity>
+      <class>Application</class>
+    </classNameRule>
+    <classNameRule>
+      <entity>audit_event_type</entity>
+      <class>EventType</class>
+    </classNameRule>
+    <classNameRule>
+      <entity>audit_event</entity>
+      <class>Event</class>
+    </classNameRule>
+    <classNameRule>
+      <entity>audit_event_data</entity>
+      <class>EventData</class>
+    </classNameRule>
+  </namingRules>
 </lqmg>

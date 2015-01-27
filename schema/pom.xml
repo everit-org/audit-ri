@@ -44,6 +44,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
+        <version>2.5.3</version>
         <extensions>true</extensions>
         <configuration>
           <instructions>
@@ -56,10 +57,10 @@
               org.everit.osgi.audit.ri.schema.qdsl
             </Export-Package>
             <Require-Capability>
-              liquibase.schema;filter=(name=org.everit.osgi.resource)
+              liquibase.schema;filter:="(name=org.everit.osgi.resource.ri)"
             </Require-Capability>
             <Provide-Capability>
-              liquibase.schema;name=org.everit.osgi.audit.ri.schema;resource=/META-INF/liquibase/audit.ri.liquibase.xml;lqmg.config.resource=/META-INF/liquibase/audit.ri.lqmg.xml
+              liquibase.schema;name=org.everit.osgi.audit.ri;resource=/META-INF/liquibase/audit.ri.liquibase.xml;lqmg.config.resource=/META-INF/liquibase/audit.ri.lqmg.xml
             </Provide-Capability>
           </instructions>
         </configuration>
@@ -67,16 +68,17 @@
       <plugin>
         <groupId>org.everit.osgi.dev</groupId>
         <artifactId>lqmg-maven-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.1</version>
         <configuration>
-          <capability>org.everit.osgi.audit.ri.schema</capability>
-          <!-- <packages>org.everit.osgi.audit.ri.schema.qdsl</packages> -->
+          <defaultSchema>org.everit.osgi.audit.ri</defaultSchema>
+          <capability>org.everit.osgi.audit.ri</capability>
+          <packages>org.everit.osgi.audit.ri.schema.qdsl</packages>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.8</version>
+        <version>1.9</version>
         <executions>
           <execution>
             <phase>generate-sources</phase>
@@ -97,68 +99,10 @@
   <dependencies>
     <dependency>
       <groupId>org.everit.osgi</groupId>
-      <artifactId>org.everit.osgi.resource</artifactId>
+      <artifactId>org.everit.osgi.resource.ri.schema.qdsl</artifactId>
       <version>1.0.0</version>
-    </dependency>
-    <!-- <dependency> -->
-    <!-- <groupId>org.everit.osgi</groupId> -->
-    <!-- <artifactId>org.everit.osgi.localization</artifactId> -->
-    <!-- <version>1.0.0-SNAPSHOT</version> -->
-    <!-- </dependency> -->
-    <!-- QueryDSL and required dependency -->
-    <dependency>
-      <groupId>com.mysema.querydsl</groupId>
-      <artifactId>querydsl-sql</artifactId>
-      <version>3.3.4</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.servicemix.bundles</groupId>
-      <artifactId>org.apache.servicemix.bundles.jsr305</artifactId>
-      <version>2.0.0_1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.servicemix.bundles</groupId>
-      <artifactId>org.apache.servicemix.bundles.javax-inject</artifactId>
-      <version>1_2</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>1.7.5</version>
     </dependency>
   </dependencies>
 
-  <repositories>
-    <repository>
-      <id>everit.public</id>
-      <url>http://repository.everit.biz/nexus/content/groups/public/</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>everit-public-snapshot</id>
-      <url>https://repo.everit.biz/artifactory/public-snapshot</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>everit-public-release</id>
-      <url>https://repo.everit.biz/artifactory/public-release</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 </project>
 

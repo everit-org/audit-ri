@@ -1,19 +1,3 @@
-/**
- * This file is part of org.everit.osgi.audit.ri.schema.
- *
- * org.everit.osgi.audit.ri.schema is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * org.everit.osgi.audit.ri.schema is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with org.everit.osgi.audit.ri.schema.  If not, see <http://www.gnu.org/licenses/>.
- */
 package org.everit.osgi.audit.ri.schema.qdsl;
 
 import static com.mysema.query.types.PathMetadataFactory.*;
@@ -37,7 +21,7 @@ public class QApplication extends com.mysema.query.sql.RelationalPathBase<QAppli
 
     private static final long serialVersionUID = 685378443;
 
-    public static final QApplication application = new QApplication("AUDIT_APPLICATION");
+    public static final QApplication application = new QApplication("audit_application");
 
     public class PrimaryKeys {
 
@@ -47,9 +31,9 @@ public class QApplication extends com.mysema.query.sql.RelationalPathBase<QAppli
 
     public class ForeignKeys {
 
-        public final com.mysema.query.sql.ForeignKey<org.everit.osgi.resource.schema.qdsl.QResource> applicationResourceIdFk = createForeignKey(resourceId, "resource_id");
+        public final com.mysema.query.sql.ForeignKey<org.everit.osgi.resource.ri.schema.qdsl.QResource> applicationResourceIdFk = createForeignKey(resourceId, "resource_id");
 
-        public final com.mysema.query.sql.ForeignKey<QEventType> _eventTypeApplicationIdFk = createInvForeignKey(applicationId, "APPLICATION_ID");
+        public final com.mysema.query.sql.ForeignKey<QEventType> _eventTypeApplicationIdFk = createInvForeignKey(applicationId, "application_id");
 
     }
 
@@ -64,7 +48,7 @@ public class QApplication extends com.mysema.query.sql.RelationalPathBase<QAppli
     public final ForeignKeys fk = new ForeignKeys();
 
     public QApplication(String variable) {
-        super(QApplication.class, forVariable(variable), "org.everit.osgi.audit.ri.schema", "AUDIT_APPLICATION");
+        super(QApplication.class, forVariable(variable), "org.everit.osgi.audit.ri", "audit_application");
         addMetadata();
     }
 
@@ -74,19 +58,19 @@ public class QApplication extends com.mysema.query.sql.RelationalPathBase<QAppli
     }
 
     public QApplication(Path<? extends QApplication> path) {
-        super(path.getType(), path.getMetadata(), "org.everit.osgi.audit.ri.schema", "AUDIT_APPLICATION");
+        super(path.getType(), path.getMetadata(), "org.everit.osgi.audit.ri", "audit_application");
         addMetadata();
     }
 
     public QApplication(PathMetadata<?> metadata) {
-        super(QApplication.class, metadata, "org.everit.osgi.audit.ri.schema", "AUDIT_APPLICATION");
+        super(QApplication.class, metadata, "org.everit.osgi.audit.ri", "audit_application");
         addMetadata();
     }
 
     public void addMetadata() {
-        addMetadata(applicationId, ColumnMetadata.named("APPLICATION_ID").ofType(-5).withSize(19).notNull());
-        addMetadata(applicationName, ColumnMetadata.named("APPLICATION_NAME").ofType(12).withSize(255).notNull());
-        addMetadata(resourceId, ColumnMetadata.named("RESOURCE_ID").ofType(-5).withSize(19).notNull());
+        addMetadata(applicationId, ColumnMetadata.named("application_id").ofType(-5).withSize(19).notNull());
+        addMetadata(applicationName, ColumnMetadata.named("application_name").ofType(12).withSize(255).notNull());
+        addMetadata(resourceId, ColumnMetadata.named("resource_id").ofType(-5).withSize(19).notNull());
     }
 
 }
