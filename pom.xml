@@ -40,6 +40,7 @@
   </properties>
 
   <modules>
+    <module>api</module>
     <module>schema</module>
     <module>core</module>
     <module>tests</module>
