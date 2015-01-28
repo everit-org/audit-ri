@@ -44,7 +44,7 @@ public interface AuditApplicationManager {
      * @throws NullPointerException
      *             if {@code applicationName} is <code>null</code>
      */
-    AuditApplication getApplicationByName(String applicationName);
+    AuditApplication getApplication(String applicationName);
 
     /**
      * Get all applications.

@@ -31,7 +31,7 @@ import org.everit.osgi.transaction.helper.api.TransactionHelper;
 
 import com.mysema.query.sql.dml.SQLInsertClause;
 
-public class EventPersister implements Supplier<Void> {
+public class AuditEventPersister implements Supplier<Void> {
 
     private final QuerydslSupport querydslSupport;
 
@@ -41,7 +41,7 @@ public class EventPersister implements Supplier<Void> {
 
     private final TransactionHelper transactionHelper;
 
-    public EventPersister(final TransactionHelper transactionHelper, final QuerydslSupport querydslSupport,
+    public AuditEventPersister(final TransactionHelper transactionHelper, final QuerydslSupport querydslSupport,
             final long eventTypeId, final AuditEvent event) {
         this.transactionHelper = transactionHelper;
         this.querydslSupport = querydslSupport;

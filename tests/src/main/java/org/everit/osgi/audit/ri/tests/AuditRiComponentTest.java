@@ -27,13 +27,13 @@ import org.apache.felix.scr.annotations.Properties;
 import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
-import org.everit.osgi.audit.EventTypeManager;
+import org.everit.osgi.audit.AuditEventTypeManager;
 import org.everit.osgi.audit.LoggingService;
 import org.everit.osgi.audit.dto.AuditEvent;
+import org.everit.osgi.audit.dto.AuditEventType;
 import org.everit.osgi.audit.dto.EventData;
-import org.everit.osgi.audit.dto.EventType;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
-import org.everit.osgi.audit.ri.InternalEventTypeManager;
+import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.dto.AuditApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
@@ -55,8 +55,8 @@ import com.mysema.query.types.ConstructorExpression;
 @Properties({
         @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE, value = "junit4"),
         @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TEST_ID, value = "auditTest"),
-        @Property(name = "eventTypeManager.target"),
-        @Property(name = "internalEventTypeManager.target"),
+        @Property(name = "auditEventTypeManager.target"),
+        @Property(name = "internalAuditEventTypeManager.target"),
         @Property(name = "loggingService.target"),
         @Property(name = "auditApplicationManager.target"),
         @Property(name = "resourceService.target"),
@@ -73,11 +73,11 @@ public class AuditRiComponentTest {
     @Reference(bind = "setQuerydslSupport")
     private QuerydslSupport querydslSupport;
 
-    @Reference(bind = "setEventTypeManager")
-    private EventTypeManager eventTypeManager;
+    @Reference(bind = "setAuditEventTypeManager")
+    private AuditEventTypeManager auditEventTypeManager;
 
-    @Reference(bind = "setInternalEventTypeManager")
-    private InternalEventTypeManager internalEventTypeManager;
+    @Reference(bind = "setInternalAuditEventTypeManager")
+    private InternalAuditEventTypeManager internalAuditEventTypeManager;
 
     @Reference(bind = "setLoggingService")
     private LoggingService loggingService;
@@ -124,12 +124,12 @@ public class AuditRiComponentTest {
         this.auditApplicationManager = auditApplicationManager;
     }
 
-    public void setEventTypeManager(final EventTypeManager eventTypeManager) {
-        this.eventTypeManager = eventTypeManager;
+    public void setAuditEventTypeManager(final AuditEventTypeManager auditEventTypeManager) {
+        this.auditEventTypeManager = auditEventTypeManager;
     }
 
-    public void setInternalEventTypeManager(final InternalEventTypeManager internalEventTypeManager) {
-        this.internalEventTypeManager = internalEventTypeManager;
+    public void setInternalAuditEventTypeManager(final InternalAuditEventTypeManager internalAuditEventTypeManager) {
+        this.internalAuditEventTypeManager = internalAuditEventTypeManager;
     }
 
     public void setLoggingService(final LoggingService loggingService) {
@@ -177,21 +177,23 @@ public class AuditRiComponentTest {
 
     @Test
     public void testCreateEventType() {
-        EventType actual = eventTypeManager.getOrCreateEventTypes("login").get(0);
+        AuditEventType actual = auditEventTypeManager.getOrCreateAuditEventTypes("login").get(0);
         Assert.assertNotNull(actual);
         Assert.assertEquals("login", actual.getName());
     }
 
     @Test
-    public void testFindApplicationByNameSuccess() {
+    public void testGetApplication() {
         createAuditApplication();
-        AuditApplication actual = auditApplicationManager.getApplicationByName(TEST_APPLICATION_NAME);
+        AuditApplication actual = auditApplicationManager.getApplication(TEST_APPLICATION_NAME);
         Assert.assertNotNull(actual);
+        AuditApplication cachedApplication = auditApplicationManager.getApplication(TEST_APPLICATION_NAME);
+        Assert.assertEquals(actual, cachedApplication);
     }
 
     @Test(expected = NullPointerException.class)
     public void testGetApplicationByNameFailure() {
-        auditApplicationManager.getApplicationByName(null);
+        auditApplicationManager.getApplication(null);
     }
 
     @Test
@@ -205,23 +207,27 @@ public class AuditRiComponentTest {
     }
 
     @Test
+    public void testGetEventTypeByName() {
+        AuditEventType loginAuditEventType = auditEventTypeManager.getOrCreateAuditEventTypes("login", "logout").get(0);
+        AuditEventType auditEventType = auditEventTypeManager.getAuditEventType("login");
+        Assert.assertNotNull(auditEventType);
+        Assert.assertEquals(loginAuditEventType.getId(), auditEventType.getId());
+        Assert.assertEquals(loginAuditEventType.getResourceId(), auditEventType.getResourceId());
+        Assert.assertEquals(loginAuditEventType.getName(), auditEventType.getName());
+
+        AuditEventType cachedAuditEventType = auditEventTypeManager.getAuditEventType("login");
+        Assert.assertEquals(auditEventType, cachedAuditEventType);
+
+    }
+
+    @Test
     public void testGetEventTypeByNameFail() {
-        Assert.assertNull(eventTypeManager.getEventTypeByName(UUID.randomUUID().toString()));
+        Assert.assertNull(auditEventTypeManager.getAuditEventType(UUID.randomUUID().toString()));
     }
 
     @Test(expected = NullPointerException.class)
     public void testGetEventTypeByNameNPE() {
-        eventTypeManager.getEventTypeByName(null);
-    }
-
-    @Test
-    public void testGetEventTypeByNameSuccess() {
-        EventType loginEventType = eventTypeManager.getOrCreateEventTypes("login", "logout").get(0);
-        EventType actual = eventTypeManager.getEventTypeByName("login");
-        Assert.assertNotNull(actual);
-        Assert.assertEquals(loginEventType.getId(), actual.getId());
-        Assert.assertEquals(loginEventType.getResourceId(), actual.getResourceId());
-        Assert.assertEquals(loginEventType.getName(), actual.getName());
+        auditEventTypeManager.getAuditEventType(null);
     }
 
     @Test
@@ -242,14 +248,14 @@ public class AuditRiComponentTest {
 
     @Test
     public void testGetOrCreateEventTypesEmpty() {
-        Assert.assertTrue(eventTypeManager.getOrCreateEventTypes().isEmpty());
+        Assert.assertTrue(auditEventTypeManager.getOrCreateAuditEventTypes().isEmpty());
     }
 
     @Test
     public void testGetOrCreateEventTypesForApplicationFail() {
         String nonExistentApplicationName = UUID.randomUUID().toString();
         try {
-            internalEventTypeManager.getOrCreateEventTypesForApplication(nonExistentApplicationName, "login");
+            internalAuditEventTypeManager.getOrCreateAuditEventTypes(nonExistentApplicationName, "login");
             Assert.fail();
         } catch (IllegalArgumentException e) {
             String message = e.getMessage();
@@ -260,24 +266,24 @@ public class AuditRiComponentTest {
 
     @Test(expected = NullPointerException.class)
     public void testGetOrCreateEventTypesNullEventName() {
-        eventTypeManager.getOrCreateEventTypes((String) null);
+        auditEventTypeManager.getOrCreateAuditEventTypes((String) null);
     }
 
     @Test
     public void testGetOrCreateEventTypesSame() {
-        EventType firstEvtType = eventTypeManager.getOrCreateEventTypes("login").get(0);
-        EventType secondEvtType = eventTypeManager.getOrCreateEventTypes("login").get(0);
+        AuditEventType firstEvtType = auditEventTypeManager.getOrCreateAuditEventTypes("login").get(0);
+        AuditEventType secondEvtType = auditEventTypeManager.getOrCreateAuditEventTypes("login").get(0);
         Assert.assertEquals(firstEvtType.getId(), secondEvtType.getId());
     }
 
     @Test
     public void testGetOrCreateEventTypesUnique() {
-        int initialSize = eventTypeManager.getEventTypes().size();
-        eventTypeManager.getOrCreateEventTypes(
+        int initialSize = auditEventTypeManager.getAuditEventTypes().size();
+        auditEventTypeManager.getOrCreateAuditEventTypes(
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString());
-        List<EventType> actual = eventTypeManager.getEventTypes();
+        List<AuditEventType> actual = auditEventTypeManager.getAuditEventTypes();
         Assert.assertEquals(initialSize + 3, actual.size());
     }
 
@@ -303,7 +309,7 @@ public class AuditRiComponentTest {
 
     @Test
     public void testNullGetApplicationByName() {
-        Assert.assertNull(auditApplicationManager.getApplicationByName("nonexistent"));
+        Assert.assertNull(auditApplicationManager.getApplication("nonexistent"));
     }
 
 }

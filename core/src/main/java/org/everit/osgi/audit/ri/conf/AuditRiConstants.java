@@ -28,6 +28,10 @@ public final class AuditRiConstants {
 
     public static final String PROP_AUDIT_APPLICATION_NAME = "auditApplicationName";
 
+    public static final String PROP_AUDIT_APPLICATION_CACHE = "auditApplicationCache.target";
+
+    public static final String PROP_AUDIT_EVENT_TYPE_CACHE = "auditEventTypeCache.target";
+
     private AuditRiConstants() {
     }
 

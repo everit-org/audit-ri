@@ -32,6 +32,34 @@ public class AuditApplication {
         this.resourceId = resourceId;
     }
 
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        AuditApplication other = (AuditApplication) obj;
+        if (applicationId != other.applicationId) {
+            return false;
+        }
+        if (applicationName == null) {
+            if (other.applicationName != null) {
+                return false;
+            }
+        } else if (!applicationName.equals(other.applicationName)) {
+            return false;
+        }
+        if (resourceId != other.resourceId) {
+            return false;
+        }
+        return true;
+    }
+
     public long getApplicationId() {
         return applicationId;
     }
@@ -42,6 +70,22 @@ public class AuditApplication {
 
     public long getResourceId() {
         return resourceId;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = (prime * result) + (int) (applicationId ^ (applicationId >>> 32));
+        result = (prime * result) + ((applicationName == null) ? 0 : applicationName.hashCode());
+        result = (prime * result) + (int) (resourceId ^ (resourceId >>> 32));
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "AuditApplication [applicationId=" + applicationId + ", applicationName=" + applicationName
+                + ", resourceId=" + resourceId + "]";
     }
 
 }

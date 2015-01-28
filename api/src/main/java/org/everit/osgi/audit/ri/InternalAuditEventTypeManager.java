@@ -18,14 +18,14 @@ package org.everit.osgi.audit.ri;
 
 import java.util.List;
 
-import org.everit.osgi.audit.dto.EventType;
+import org.everit.osgi.audit.dto.AuditEventType;
 
-public interface InternalEventTypeManager {
+public interface InternalAuditEventTypeManager {
 
-    EventType getEventTypeByNameForApplication(String applicationName, String eventTypeName);
+    AuditEventType getAuditEventType(String applicationName, String eventTypeName);
 
-    List<EventType> getEventTypesByApplication(String applicationName);
+    List<AuditEventType> getAuditEventTypes(String applicationName);
 
-    List<EventType> getOrCreateEventTypesForApplication(String applicationName, String... eventTypeNames);
+    List<AuditEventType> getOrCreateAuditEventTypes(String applicationName, String... eventTypeNames);
 
 }
