@@ -18,6 +18,7 @@ package org.everit.osgi.audit.ri.tests;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.felix.scr.annotations.Component;
@@ -31,7 +32,6 @@ import org.everit.osgi.audit.AuditEventTypeManager;
 import org.everit.osgi.audit.LoggingService;
 import org.everit.osgi.audit.dto.AuditEvent;
 import org.everit.osgi.audit.dto.AuditEventType;
-import org.everit.osgi.audit.dto.EventData;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.dto.AuditApplication;
@@ -39,16 +39,17 @@ import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventType;
+import org.everit.osgi.dev.testrunner.TestDuringDevelopment;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.querydsl.support.QuerydslSupport;
 import org.everit.osgi.resource.ResourceService;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.mysema.query.QueryException;
 import com.mysema.query.sql.SQLQuery;
 import com.mysema.query.sql.dml.SQLDeleteClause;
 import com.mysema.query.types.ConstructorExpression;
+import com.mysema.query.types.Projections;
 
 @Component(name = "AuditRiComponentTest", immediate = true, configurationFactory = false,
         policy = ConfigurationPolicy.OPTIONAL)
@@ -60,9 +61,12 @@ import com.mysema.query.types.ConstructorExpression;
         @Property(name = "loggingService.target"),
         @Property(name = "auditApplicationManager.target"),
         @Property(name = "resourceService.target"),
-        @Property(name = "querydslSupport.target")
+        @Property(name = "querydslSupport.target"),
+        @Property(name = "auditApplicationCache.target", value = "(service.description=audit-application-cache)"),
+        @Property(name = "auditEventTypeCache.target", value = "(service.description=audit-event-type-cache)"),
 })
 @Service(AuditRiComponentTest.class)
+@TestDuringDevelopment
 public class AuditRiComponentTest {
 
     private static final String TEST_APPLICATION_NAME = "test-application-2";
@@ -85,8 +89,18 @@ public class AuditRiComponentTest {
     @Reference(bind = "setAuditApplicationManager")
     private AuditApplicationManager auditApplicationManager;
 
+    @Reference(bind = "setAuditApplicationCache")
+    private Map<?, ?> auditApplicationCache;
+
+    @Reference(bind = "setAuditEventTypeCache")
+    private Map<?, ?> auditEventTypeCache;
+
+    private AuditApplication createAuditApplication() {
+        return auditApplicationManager.getOrCreateApplication(TEST_APPLICATION_NAME);
+    }
+
     @Deactivate
-    public void cleanupDatabase() {
+    public void deactivate() {
         querydslSupport.execute((connection, configuration) -> {
             new SQLDeleteClause(connection, configuration, QEventData.eventData).execute();
             new SQLDeleteClause(connection, configuration, QEvent.event).execute();
@@ -94,21 +108,18 @@ public class AuditRiComponentTest {
             new SQLDeleteClause(connection, configuration, QApplication.application).execute();
             return null;
         });
-    }
-
-    private AuditApplication createAuditApplication() {
-        return auditApplicationManager.getOrCreateApplication(TEST_APPLICATION_NAME);
+        auditApplicationCache.clear();
+        auditEventTypeCache.clear();
     }
 
     private long logDefaultEvent() {
-        EventData[] eventDataArray = new EventData[] {
-                new EventData("string", "string"),
-                new EventData("text", false, "text"),
-                new EventData("number", 10.75),
-                new EventData("binary", new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }),
-                new EventData("timestamp", Instant.now())
-        };
-        AuditEvent event = new AuditEvent("login", eventDataArray);
+        AuditEvent event = new AuditEvent.Builder().eventTypeName("login")
+                .addStringEventData("string", "string")
+                .addTextEventData("text", false, "text")
+                .addNumberEventData("number", 10.75)
+                .addBinaryEventData("binary", new byte[] { 0, 1, 2, 3, 4 })
+                .addTimestampEventData("timestamp", Instant.now())
+                .build();
         loggingService.logEvent(event);
         return querydslSupport.execute((connection, configuration) -> {
             QEvent qEvent = QEvent.event;
@@ -120,8 +131,16 @@ public class AuditRiComponentTest {
         });
     }
 
+    public void setAuditApplicationCache(final Map<String, AuditApplication> auditApplicationCache) {
+        this.auditApplicationCache = auditApplicationCache;
+    }
+
     public void setAuditApplicationManager(final AuditApplicationManager auditApplicationManager) {
         this.auditApplicationManager = auditApplicationManager;
+    }
+
+    public void setAuditEventTypeCache(final Map<?, ?> auditEventTypeCache) {
+        this.auditEventTypeCache = auditEventTypeCache;
     }
 
     public void setAuditEventTypeManager(final AuditEventTypeManager auditEventTypeManager) {
@@ -144,18 +163,18 @@ public class AuditRiComponentTest {
         this.resourceService = resourceService;
     }
 
-    @Test(expected = QueryException.class)
-    public void testCreateApplicationConstraintViolation() {
-        long resourceId = resourceService.createResource();
-        String applicationName = UUID.randomUUID().toString();
-        auditApplicationManager.createApplication(resourceId, applicationName);
-        auditApplicationManager.createApplication(resourceId, applicationName);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testCreateApplicationFail() {
-        auditApplicationManager.createApplication(0, null);
-    }
+    // @Test(expected = QueryException.class)
+    // public void testCreateApplicationConstraintViolation() {
+    // long resourceId = resourceService.createResource();
+    // String applicationName = UUID.randomUUID().toString();
+    // auditApplicationManager.createApplication(resourceId, applicationName);
+    // auditApplicationManager.createApplication(resourceId, applicationName);
+    // }
+    //
+    // @Test(expected = NullPointerException.class)
+    // public void testCreateApplicationFail() {
+    // auditApplicationManager.createApplication(0, null);
+    // }
 
     @Test
     public void testCreateApplicationSuccess() {
@@ -165,7 +184,7 @@ public class AuditRiComponentTest {
             AuditApplication result = new SQLQuery(connection, configuration)
                     .from(qApplication)
                     .where(qApplication.applicationName.eq(TEST_APPLICATION_NAME))
-                    .uniqueResult(ConstructorExpression.create(AuditApplication.class,
+                    .uniqueResult(Projections.fields(AuditApplication.class,
                             qApplication.applicationId,
                             qApplication.applicationName,
                             qApplication.resourceId));
@@ -179,55 +198,7 @@ public class AuditRiComponentTest {
     public void testCreateEventType() {
         AuditEventType actual = auditEventTypeManager.getOrCreateAuditEventTypes("login").get(0);
         Assert.assertNotNull(actual);
-        Assert.assertEquals("login", actual.getName());
-    }
-
-    @Test
-    public void testGetApplication() {
-        createAuditApplication();
-        AuditApplication actual = auditApplicationManager.getApplication(TEST_APPLICATION_NAME);
-        Assert.assertNotNull(actual);
-        AuditApplication cachedApplication = auditApplicationManager.getApplication(TEST_APPLICATION_NAME);
-        Assert.assertEquals(actual, cachedApplication);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testGetApplicationByNameFailure() {
-        auditApplicationManager.getApplication(null);
-    }
-
-    @Test
-    public void testGetApplications() {
-        List<AuditApplication> actual = auditApplicationManager.getApplications();
-        int initialSize = actual.size();
-        auditApplicationManager.createApplication(resourceService.createResource(), "app1");
-        auditApplicationManager.createApplication(resourceService.createResource(), "app2");
-        actual = auditApplicationManager.getApplications();
-        Assert.assertEquals(initialSize + 2, actual.size());
-    }
-
-    @Test
-    public void testGetEventTypeByName() {
-        AuditEventType loginAuditEventType = auditEventTypeManager.getOrCreateAuditEventTypes("login", "logout").get(0);
-        AuditEventType auditEventType = auditEventTypeManager.getAuditEventType("login");
-        Assert.assertNotNull(auditEventType);
-        Assert.assertEquals(loginAuditEventType.getId(), auditEventType.getId());
-        Assert.assertEquals(loginAuditEventType.getResourceId(), auditEventType.getResourceId());
-        Assert.assertEquals(loginAuditEventType.getName(), auditEventType.getName());
-
-        AuditEventType cachedAuditEventType = auditEventTypeManager.getAuditEventType("login");
-        Assert.assertEquals(auditEventType, cachedAuditEventType);
-
-    }
-
-    @Test
-    public void testGetEventTypeByNameFail() {
-        Assert.assertNull(auditEventTypeManager.getAuditEventType(UUID.randomUUID().toString()));
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testGetEventTypeByNameNPE() {
-        auditEventTypeManager.getAuditEventType(null);
+        Assert.assertEquals("login", actual.eventTypeName);
     }
 
     @Test
@@ -244,6 +215,15 @@ public class AuditRiComponentTest {
     @Test(expected = NullPointerException.class)
     public void testGetOrCreateApplicationNullName() {
         auditApplicationManager.getOrCreateApplication(null);
+    }
+
+    @Test
+    public void testGetOrCreateEventTypes() {
+        List<AuditEventType> auditEventTypes = auditEventTypeManager.getOrCreateAuditEventTypes(
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString());
+        Assert.assertEquals(3, auditEventTypes.size());
     }
 
     @Test
@@ -273,18 +253,7 @@ public class AuditRiComponentTest {
     public void testGetOrCreateEventTypesSame() {
         AuditEventType firstEvtType = auditEventTypeManager.getOrCreateAuditEventTypes("login").get(0);
         AuditEventType secondEvtType = auditEventTypeManager.getOrCreateAuditEventTypes("login").get(0);
-        Assert.assertEquals(firstEvtType.getId(), secondEvtType.getId());
-    }
-
-    @Test
-    public void testGetOrCreateEventTypesUnique() {
-        int initialSize = auditEventTypeManager.getAuditEventTypes().size();
-        auditEventTypeManager.getOrCreateAuditEventTypes(
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString());
-        List<AuditEventType> actual = auditEventTypeManager.getAuditEventTypes();
-        Assert.assertEquals(initialSize + 3, actual.size());
+        Assert.assertEquals(firstEvtType.eventTypeId, secondEvtType.eventTypeId);
     }
 
     @Test
@@ -305,11 +274,6 @@ public class AuditRiComponentTest {
             Assert.assertEquals(5, dataCount);
             return null;
         });
-    }
-
-    @Test
-    public void testNullGetApplicationByName() {
-        Assert.assertNull(auditApplicationManager.getApplication("nonexistent"));
     }
 
 }

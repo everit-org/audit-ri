@@ -59,7 +59,7 @@ public class QEventType extends com.mysema.query.sql.RelationalPathBase<QEventTy
 
     public final NumberPath<Long> eventTypeId = createNumber("eventTypeId", Long.class);
 
-    public final StringPath name = createString("name");
+    public final StringPath eventTypeName = createString("eventTypeName");
 
     public final NumberPath<Long> resourceId = createNumber("resourceId", Long.class);
 
@@ -90,7 +90,7 @@ public class QEventType extends com.mysema.query.sql.RelationalPathBase<QEventTy
     public void addMetadata() {
         addMetadata(applicationId, ColumnMetadata.named("application_id").ofType(-5).withSize(19).notNull());
         addMetadata(eventTypeId, ColumnMetadata.named("event_type_id").ofType(-5).withSize(19).notNull());
-        addMetadata(name, ColumnMetadata.named("name").ofType(12).withSize(255).notNull());
+        addMetadata(eventTypeName, ColumnMetadata.named("event_type_name").ofType(12).withSize(255).notNull());
         addMetadata(resourceId, ColumnMetadata.named("resource_id").ofType(-5).withSize(19).notNull());
     }
 

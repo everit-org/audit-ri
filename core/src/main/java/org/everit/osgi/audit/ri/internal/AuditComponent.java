@@ -47,7 +47,7 @@ import org.everit.osgi.transaction.helper.api.TransactionHelper;
 
 import com.mysema.query.sql.SQLQuery;
 import com.mysema.query.sql.dml.SQLInsertClause;
-import com.mysema.query.types.ConstructorExpression;
+import com.mysema.query.types.Projections;
 
 @Component(name = AuditRiConstants.SERVICE_FACTORY_PID, metatype = true, configurationFactory = true,
         policy = ConfigurationPolicy.REQUIRE)
@@ -142,19 +142,28 @@ public class AuditComponent implements
         getOrCreateApplication(auditApplicationName);
     }
 
-    @Override
-    public AuditApplication createApplication(final long resourceId, final String applicationName) {
+    private AuditApplication createApplication(final String applicationName) {
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
 
-        return querydslSupport.execute((connection, configuration) -> {
+        return transactionHelper.required(() -> {
 
-            QApplication qApplication = QApplication.application;
-            long applicationId = new SQLInsertClause(connection, configuration, qApplication)
-                    .set(qApplication.resourceId, resourceId)
-                    .set(qApplication.applicationName, applicationName)
-                    .executeWithKey(qApplication.applicationId);
+            return querydslSupport.execute((connection, configuration) -> {
 
-            return new AuditApplication(applicationId, applicationName, resourceId);
+                long resourceId = resourceService.createResource();
+
+                QApplication qApplication = QApplication.application;
+
+                long applicationId = new SQLInsertClause(connection, configuration, qApplication)
+                        .set(qApplication.resourceId, resourceId)
+                        .set(qApplication.applicationName, applicationName)
+                        .executeWithKey(qApplication.applicationId);
+
+                return new AuditApplication.Builder()
+                        .applicationId(applicationId)
+                        .applicationName(applicationName)
+                        .resourceId(resourceId)
+                        .build();
+            });
         });
 
     }
@@ -168,73 +177,58 @@ public class AuditComponent implements
 
                 QEventType qEventType = QEventType.eventType;
 
-                Long eventTypeId = new SQLInsertClause(connection, configuration, qEventType)
-                        .set(qEventType.name, eventTypeName)
+                long eventTypeId = new SQLInsertClause(connection, configuration, qEventType)
+                        .set(qEventType.eventTypeName, eventTypeName)
                         .set(qEventType.applicationId, applicationId)
                         .set(qEventType.resourceId, resourceId)
                         .executeWithKey(qEventType.eventTypeId);
 
-                return new AuditEventType(eventTypeId, eventTypeName, resourceId);
+                return new AuditEventType.Builder()
+                        .eventTypeId(eventTypeId)
+                        .eventTypeName(eventTypeName)
+                        .resourceId(resourceId)
+                        .build();
             });
         });
     }
 
-    @Override
-    public AuditApplication getApplication(final String applicationName) {
+    private AuditApplication getApplication(final String applicationName) {
 
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
 
         AuditApplication cachedAuditApplication = auditApplicationCache.get(applicationName);
         if (cachedAuditApplication != null) {
-            return cachedAuditApplication;
+            return new AuditApplication(cachedAuditApplication);
         }
 
         return transactionHelper.required(() -> {
 
             AuditApplication auditApplication = selectApplication(applicationName);
             if (auditApplication != null) {
-                auditApplicationCache.put(applicationName, auditApplication);
+                auditApplicationCache.put(applicationName, new AuditApplication(auditApplication));
             }
 
             return auditApplication;
         });
     }
 
-    @Override
-    public List<AuditApplication> getApplications() {
-        return querydslSupport.execute((connection, configuration) -> {
-            QApplication qApplication = QApplication.application;
-            return new SQLQuery(connection, configuration)
-                    .from(qApplication)
-                    .listResults(ConstructorExpression.create(AuditApplication.class,
-                            qApplication.applicationId,
-                            qApplication.applicationName,
-                            qApplication.resourceId))
-                    .getResults();
-        });
-    }
-
-    @Override
-    public AuditEventType getAuditEventType(final String eventTypeName) {
-        return getAuditEventType(auditApplicationName, eventTypeName);
-    }
-
-    @Override
-    public AuditEventType getAuditEventType(final String applicationName, final String eventTypeName) {
+    private AuditEventType getAuditEventType(final String applicationName, final String eventTypeName) {
 
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
         Objects.requireNonNull(eventTypeName, "eventTypeName cannot be null");
 
-        AuditEventType cachedAuditEventType = auditEventTypeCache.get(new AuditEventTypeKey(applicationName, eventTypeName));
+        AuditEventType cachedAuditEventType = auditEventTypeCache.get(new AuditEventTypeKey(applicationName,
+                eventTypeName));
         if (cachedAuditEventType != null) {
-            return cachedAuditEventType;
+            return new AuditEventType(cachedAuditEventType);
         }
 
         return transactionHelper.required(() -> {
 
             AuditEventType auditEventType = selectAuditEventType(applicationName, eventTypeName);
             if (auditEventType != null) {
-                auditEventTypeCache.put(new AuditEventTypeKey(applicationName, eventTypeName), auditEventType);
+                auditEventTypeCache.put(new AuditEventTypeKey(applicationName, eventTypeName),
+                        new AuditEventType(auditEventType));
             }
 
             return auditEventType;
@@ -242,35 +236,10 @@ public class AuditComponent implements
     }
 
     @Override
-    public List<AuditEventType> getAuditEventTypes() {
-        return getAuditEventTypes(auditApplicationName);
-    }
-
-    @Override
-    public List<AuditEventType> getAuditEventTypes(final String applicationName) {
-        return querydslSupport.execute((connection, configuration) -> {
-
-            QEventType qEventType = QEventType.eventType;
-            QApplication qApplication = QApplication.application;
-
-            return new SQLQuery(connection, configuration)
-                    .from(qEventType)
-                    .innerJoin(qApplication).on(qEventType.applicationId.eq(qApplication.applicationId))
-                    .where(qApplication.applicationName.eq(applicationName))
-                    .list(ConstructorExpression.create(AuditEventType.class,
-                            qEventType.eventTypeId,
-                            qEventType.name,
-                            qEventType.resourceId));
-        });
-    }
-
-    @Override
     public AuditApplication getOrCreateApplication(final String applicationName) {
-        return Optional.ofNullable(getApplication(applicationName))
-                .orElseGet(() -> {
-                    long resourceId = resourceService.createResource();
-                    return createApplication(resourceId, applicationName);
-                });
+        return Optional
+                .ofNullable(getApplication(applicationName))
+                .orElseGet(() -> createApplication(applicationName));
     }
 
     private AuditEventType getOrCreateAuditEventType(final String applicationName, final String eventTypeName) {
@@ -313,10 +282,11 @@ public class AuditComponent implements
     }
 
     @Override
-    public void logEvent(final String applicationName, final AuditEvent event) {
+    public void logEvent(final String applicationName, final AuditEvent auditEvent) {
         transactionHelper.required(() -> {
-            AuditEventType auditEventType = getOrCreateAuditEventType(applicationName, event.getName());
-            return new AuditEventPersister(transactionHelper, querydslSupport, auditEventType.getId(), event).get();
+            AuditEventType auditEventType = getOrCreateAuditEventType(applicationName, auditEvent.eventTypeName);
+            return new AuditEventPersister(
+                    transactionHelper, querydslSupport, auditEventType.eventTypeId, auditEvent).get();
         });
     }
 
@@ -334,7 +304,7 @@ public class AuditComponent implements
             return new SQLQuery(connection, configuration)
                     .from(qApplication)
                     .where(qApplication.applicationName.eq(applicationName))
-                    .uniqueResult(ConstructorExpression.create(AuditApplication.class,
+                    .uniqueResult(Projections.fields(AuditApplication.class,
                             qApplication.applicationId,
                             qApplication.applicationName,
                             qApplication.resourceId));
@@ -351,10 +321,10 @@ public class AuditComponent implements
                     .from(qEventType)
                     .innerJoin(qApplication).on(qEventType.applicationId.eq(qApplication.applicationId))
                     .where(qApplication.applicationName.eq(applicationName))
-                    .where(qEventType.name.eq(eventTypeName))
-                    .uniqueResult(ConstructorExpression.create(AuditEventType.class,
+                    .where(qEventType.eventTypeName.eq(eventTypeName))
+                    .uniqueResult(Projections.fields(AuditEventType.class,
                             qEventType.eventTypeId,
-                            qEventType.name,
+                            qEventType.eventTypeName,
                             qEventType.resourceId));
         });
     }

@@ -20,17 +20,71 @@ import java.util.Objects;
 
 public class AuditApplication {
 
-    private final long applicationId;
+    public static class Builder {
 
-    private final String applicationName;
+        private long applicationId;
 
-    private final long resourceId;
+        private String applicationName;
 
-    public AuditApplication(final long applicationId, final String applicationName, final long resourceId) {
-        this.applicationId = applicationId;
-        this.applicationName = Objects.requireNonNull(applicationName, "applicationName cannot be null");
-        this.resourceId = resourceId;
+        private long resourceId;
+
+        public Builder() {
+        }
+
+        public Builder(final AuditApplication auditApplication) {
+            Objects.requireNonNull(auditApplication, "auditApplication cannot be null");
+            applicationId = auditApplication.applicationId;
+            applicationName = auditApplication.applicationName;
+            resourceId = auditApplication.resourceId;
+        }
+
+        public Builder applicationId(final long applicationId) {
+            this.applicationId = applicationId;
+            return this;
+        }
+
+        public Builder applicationName(final String applicationName) {
+            this.applicationName = applicationName;
+            return this;
+        }
+
+        public AuditApplication build() {
+            return new AuditApplication(this);
+        }
+
+        public Builder resourceId(final long resourceId) {
+            this.resourceId = resourceId;
+            return this;
+        }
     }
+
+    public long applicationId;
+
+    public String applicationName;
+
+    public long resourceId;
+
+    public AuditApplication() {
+    }
+
+    public AuditApplication(final AuditApplication original) {
+        Objects.requireNonNull(original, "original cannot be null");
+        applicationId = original.applicationId;
+        applicationName = original.applicationName;
+        resourceId = original.resourceId;
+    }
+
+    private AuditApplication(final Builder builder) {
+        applicationId = builder.applicationId;
+        applicationName = Objects.requireNonNull(builder.applicationName, "applicationName cannot be null");
+        resourceId = builder.resourceId;
+    }
+
+    // public AuditApplication(final long applicationId, final String applicationName, final long resourceId) {
+    // this.applicationId = applicationId;
+    // this.applicationName = Objects.requireNonNull(applicationName, "applicationName cannot be null");
+    // this.resourceId = resourceId;
+    // }
 
     @Override
     public boolean equals(final Object obj) {

@@ -16,42 +16,9 @@
  */
 package org.everit.osgi.audit.ri;
 
-import java.util.List;
-
 import org.everit.osgi.audit.ri.dto.AuditApplication;
 
 public interface AuditApplicationManager {
-
-    /**
-     * Creates an application.
-     *
-     * @param resourceId
-     *            the id of the resource the application will belong to
-     * @param applicationName
-     *            the unique name of the application
-     * @return the created {@link AuditApplication}
-     * @throws NullPointerException
-     *             if {@code applicationName} is <code>null</code>
-     */
-    AuditApplication createApplication(long resourceId, String applicationName);
-
-    /**
-     * Find applications by name.
-     *
-     * @param applicationName
-     *            the name of the application to find
-     * @return the AuditApplication DTO object that matches the given name or <code>null</code> if not found
-     * @throws NullPointerException
-     *             if {@code applicationName} is <code>null</code>
-     */
-    AuditApplication getApplication(String applicationName);
-
-    /**
-     * Get all applications.
-     *
-     * @return the List of applications
-     */
-    List<AuditApplication> getApplications();
 
     /**
      * Returns the application by its name if exists, otherwise creates an application and assigns it to a new resource

@@ -43,7 +43,7 @@
       <column name="event_type_id" type="bigint" autoIncrement="true">
         <constraints primaryKey="true" />
       </column>
-      <column name="name" type="varchar(255)">
+      <column name="event_type_name" type="varchar(255)">
         <constraints nullable="false" />
       </column>
       <column name="resource_id" type="bigint">
@@ -59,8 +59,9 @@
 
     <addForeignKeyConstraint constraintName="fk_event_type_application_id" baseTableName="audit_event_type"
       baseColumnNames="application_id" referencedTableName="audit_application" referencedColumnNames="application_id" />
-    
-    <addUniqueConstraint tableName="audit_event_type" columnNames="application_id,name" />
+
+    <addUniqueConstraint constraintName="unique_application_id_event_type_name" tableName="audit_event_type"
+      columnNames="application_id,event_type_name" />
 
     <createTable tableName="audit_event">
       <column name="event_id" type="bigint" autoIncrement="true">

@@ -35,41 +35,41 @@ public class AuditEventPersister implements Supplier<Void> {
 
     private final QuerydslSupport querydslSupport;
 
-    private final AuditEvent event;
+    private final AuditEvent auditEvent;
 
     private final long eventTypeId;
 
     private final TransactionHelper transactionHelper;
 
     public AuditEventPersister(final TransactionHelper transactionHelper, final QuerydslSupport querydslSupport,
-            final long eventTypeId, final AuditEvent event) {
+            final long eventTypeId, final AuditEvent auditEvent) {
         this.transactionHelper = transactionHelper;
         this.querydslSupport = querydslSupport;
         this.eventTypeId = eventTypeId;
-        this.event = event;
+        this.auditEvent = auditEvent;
     }
 
     private void addEventDataValue(
             final SQLInsertClause insert, final QEventData qEventData, final EventData eventData) {
-        switch (eventData.getEventDataType()) {
+        switch (eventData.eventDataType) {
         case NUMBER:
-            insert.set(qEventData.numberValue, eventData.getNumberValue());
+            insert.set(qEventData.numberValue, eventData.numberValue);
             break;
         case STRING:
-            insert.set(qEventData.stringValue, eventData.getTextValue());
+            insert.set(qEventData.stringValue, eventData.textValue);
             break;
         case TEXT:
-            insert.set(qEventData.textValue, eventData.getTextValue());
+            insert.set(qEventData.textValue, eventData.textValue);
             break;
         case BINARY:
             try {
-                insert.set(qEventData.binaryValue, new SerialBlob(eventData.getBinaryValue()));
+                insert.set(qEventData.binaryValue, new SerialBlob(eventData.binaryValue));
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
             break;
         case TIMESTAMP:
-            insert.set(qEventData.timestampValue, Timestamp.from(eventData.getTimestampValue()));
+            insert.set(qEventData.timestampValue, Timestamp.from(eventData.timestampValue));
             break;
         }
     }
@@ -82,16 +82,16 @@ public class AuditEventPersister implements Supplier<Void> {
                 QEvent qEvent = QEvent.event;
 
                 long eventId = new SQLInsertClause(connection, configuration, qEvent)
-                        .set(qEvent.occuredAt, Timestamp.from(event.getOccuredAt()))
+                        .set(qEvent.occuredAt, Timestamp.from(auditEvent.occuredAt))
                         .set(qEvent.eventTypeId, eventTypeId)
                         .executeWithKey(qEvent.eventId);
 
-                for (EventData eventData : event.getEventDataArray()) {
+                for (EventData eventData : auditEvent.eventDataArray) {
                     QEventData qEventData = QEventData.eventData;
                     SQLInsertClause insert = new SQLInsertClause(connection, configuration, qEventData)
                             .set(qEventData.eventId, eventId)
-                            .set(qEventData.eventDataName, eventData.getName())
-                            .set(qEventData.eventDataType, eventData.getEventDataType().toString());
+                            .set(qEventData.eventDataName, eventData.eventDataName)
+                            .set(qEventData.eventDataType, eventData.eventDataType.toString());
                     addEventDataValue(insert, qEventData, eventData);
                     insert.execute();
                 }
