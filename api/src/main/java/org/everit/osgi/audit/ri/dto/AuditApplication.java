@@ -114,18 +114,6 @@ public class AuditApplication {
         return true;
     }
 
-    public long getApplicationId() {
-        return applicationId;
-    }
-
-    public String getApplicationName() {
-        return applicationName;
-    }
-
-    public long getResourceId() {
-        return resourceId;
-    }
-
     @Override
     public int hashCode() {
         final int prime = 31;

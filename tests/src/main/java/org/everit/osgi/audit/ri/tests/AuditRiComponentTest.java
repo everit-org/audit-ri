@@ -17,10 +17,11 @@
 package org.everit.osgi.audit.ri.tests;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
+import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.ConfigurationPolicy;
 import org.apache.felix.scr.annotations.Deactivate;
@@ -32,24 +33,41 @@ import org.everit.osgi.audit.AuditEventTypeManager;
 import org.everit.osgi.audit.LoggingService;
 import org.everit.osgi.audit.dto.AuditEvent;
 import org.everit.osgi.audit.dto.AuditEventType;
+import org.everit.osgi.audit.dto.EventData;
+import org.everit.osgi.audit.dto.EventData.Builder;
+import org.everit.osgi.audit.dto.EventDataType;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
+import org.everit.osgi.audit.ri.AuditRiPermissions;
+import org.everit.osgi.audit.ri.AuditRiProps;
+import org.everit.osgi.audit.ri.AuditRiScr;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.dto.AuditApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventType;
-import org.everit.osgi.dev.testrunner.TestDuringDevelopment;
+import org.everit.osgi.authentication.context.AuthenticationPropagator;
+import org.everit.osgi.authnr.permissionchecker.UnauthorizedException;
+import org.everit.osgi.authorization.AuthorizationManager;
+import org.everit.osgi.authorization.PermissionChecker;
+import org.everit.osgi.authorization.ri.schema.qdsl.QPermission;
+import org.everit.osgi.authorization.ri.schema.qdsl.QPermissionInheritance;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
+import org.everit.osgi.props.PropertyManager;
+import org.everit.osgi.props.ri.schema.qdsl.QProperty;
 import org.everit.osgi.querydsl.support.QuerydslSupport;
 import org.everit.osgi.resource.ResourceService;
+import org.everit.osgi.resource.ri.schema.qdsl.QResource;
+import org.everit.osgi.transaction.helper.api.TransactionHelper;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
+import com.mysema.query.QueryException;
+import com.mysema.query.Tuple;
 import com.mysema.query.sql.SQLQuery;
 import com.mysema.query.sql.dml.SQLDeleteClause;
-import com.mysema.query.types.ConstructorExpression;
-import com.mysema.query.types.Projections;
 
 @Component(name = "AuditRiComponentTest", immediate = true, configurationFactory = false,
         policy = ConfigurationPolicy.OPTIONAL)
@@ -62,20 +80,41 @@ import com.mysema.query.types.Projections;
         @Property(name = "auditApplicationManager.target"),
         @Property(name = "resourceService.target"),
         @Property(name = "querydslSupport.target"),
+        @Property(name = "transactionHelper.target"),
         @Property(name = "auditApplicationCache.target", value = "(service.description=audit-application-cache)"),
         @Property(name = "auditEventTypeCache.target", value = "(service.description=audit-event-type-cache)"),
+        @Property(name = "permissionChecker.target"),
+        @Property(name = "authenticationPropagator.target"),
+        @Property(name = "authorizationManager.target"),
+        @Property(name = "propertyManager.target")
 })
 @Service(AuditRiComponentTest.class)
-@TestDuringDevelopment
 public class AuditRiComponentTest {
 
-    private static final String TEST_APPLICATION_NAME = "test-application-2";
+    private static final Instant TIMESTAMP_V = Instant.now();
+
+    private static final double NUMBER_V = 10.75;
+
+    private static final String TIMESTAMP_N = "timestamp";
+
+    private static final String NUMBER_N = "number";
+
+    private static final String TEXT_N = "text";
+
+    private static final String STRING_N = "string";
+
+    private static final String STRING_V = "string-value";
+
+    private static final String TEXT_V = "text-value";
 
     @Reference(bind = "setResourceService")
     private ResourceService resourceService;
 
     @Reference(bind = "setQuerydslSupport")
     private QuerydslSupport querydslSupport;
+
+    @Reference(bind = "setTransactionHelper")
+    private TransactionHelper transactionHelper;
 
     @Reference(bind = "setAuditEventTypeManager")
     private AuditEventTypeManager auditEventTypeManager;
@@ -95,30 +134,150 @@ public class AuditRiComponentTest {
     @Reference(bind = "setAuditEventTypeCache")
     private Map<?, ?> auditEventTypeCache;
 
-    private AuditApplication createAuditApplication() {
-        return auditApplicationManager.getOrCreateApplication(TEST_APPLICATION_NAME);
+    @Reference(bind = "setPermissionChecker")
+    private PermissionChecker permissionChecker;
+
+    @Reference(bind = "setAuthenticationPropagator")
+    private AuthenticationPropagator authenticationPropagator;
+
+    @Reference(bind = "setAuthorizationManager")
+    private AuthorizationManager authorizationManager;
+
+    @Reference(bind = "setPropertyManager")
+    private PropertyManager propertyManager;
+
+    private long auditApplicationTargetResrouceId;
+
+    private String testAuditApplicationName;
+
+    private long testAuditApplicationResourceId;
+
+    private long systemResourceId;
+
+    @Activate
+    public void activate() {
+        auditApplicationTargetResrouceId =
+                Long.valueOf(propertyManager.getProperty(AuditRiProps.AUDIT_APPLICATION_TARGET_RESOURCE_ID));
+
+        systemResourceId = permissionChecker.getSystemResourceId();
+
+        AuditApplication testAuditApplication = authenticationPropagator.runAs(systemResourceId, () -> {
+            return auditApplicationManager.getOrCreateApplication(testAuditApplicationName);
+        });
+
+        testAuditApplicationResourceId = testAuditApplication.resourceId;
+
+    }
+
+    @After
+    public void after() {
+        clearPermissions();
+        clearAuditCaches();
+    }
+
+    private void assertEvent(final String eventTypeName) {
+        List<EventData> eventDataList = querydslSupport.execute((connection, configuration) -> {
+
+            QEvent qEvent = QEvent.event;
+            QEventType qEventType = QEventType.eventType;
+            QEventData qEventData = QEventData.eventData;
+
+            List<Tuple> tuples = new SQLQuery(connection, configuration)
+                    .from(qEvent)
+                    .innerJoin(qEventType)
+                    .on(qEventType.eventTypeId.eq(qEvent.eventTypeId))
+                    .innerJoin(qEventData)
+                    .on(qEventData.eventId.eq(qEvent.eventId))
+                    .where(qEventType.eventTypeName.eq(eventTypeName))
+                    .orderBy(qEventData.eventDataId.asc())
+                    .list(qEventData.eventDataName, qEventData.eventDataType,
+                            qEventData.stringValue,
+                            qEventData.textValue,
+                            qEventData.numberValue,
+                            qEventData.timestampValue);
+
+            List<EventData> rval = new ArrayList<>();
+            for (Tuple tuple : tuples) {
+                Builder eventDataBuilder = new EventData.Builder(tuple.get(qEventData.eventDataName));
+                String eventDataTypeString = tuple.get(qEventData.eventDataType);
+                EventDataType eventDataType = EventDataType.valueOf(eventDataTypeString);
+                switch (eventDataType) {
+                case STRING:
+                    String stringValue = tuple.get(qEventData.stringValue);
+                    rval.add(eventDataBuilder.buildStringValue(stringValue));
+                    break;
+                case TEXT:
+                    String textValue = tuple.get(qEventData.textValue);
+                    rval.add(eventDataBuilder.buildTextValue(false, textValue));
+                    break;
+                case NUMBER:
+                    double numberValue = tuple.get(qEventData.numberValue);
+                    rval.add(eventDataBuilder.buildNumberValue(numberValue));
+                    break;
+                case TIMESTAMP:
+                    Instant timestampValue = tuple.get(qEventData.timestampValue).toInstant();
+                    rval.add(eventDataBuilder.buildTimestampValue(timestampValue));
+                    break;
+                }
+            }
+
+            return rval;
+        });
+
+        Assert.assertEquals(4, eventDataList.size());
+        Assert.assertEquals(new EventData.Builder(STRING_N).buildStringValue(STRING_V), eventDataList.get(0));
+        Assert.assertEquals(new EventData.Builder(TEXT_N).buildTextValue(false, TEXT_V), eventDataList.get(1));
+        Assert.assertEquals(new EventData.Builder(NUMBER_N).buildNumberValue(NUMBER_V), eventDataList.get(2));
+        Assert.assertEquals(new EventData.Builder(TIMESTAMP_N).buildTimestampValue(TIMESTAMP_V), eventDataList.get(3));
+    }
+
+    @Before
+    public void before() {
+        clearAuditCaches();
+    }
+
+    private void clearAuditCaches() {
+        auditApplicationCache.clear();
+        auditEventTypeCache.clear();
+    }
+
+    private void clearPermissions() {
+        querydslSupport.execute((connection, configuration) -> {
+
+            new SQLDeleteClause(connection, configuration, QPermission.permission).execute();
+            new SQLDeleteClause(connection, configuration, QPermissionInheritance.permissionInheritance).execute();
+
+            return null;
+        });
     }
 
     @Deactivate
     public void deactivate() {
         querydslSupport.execute((connection, configuration) -> {
+
+            new SQLDeleteClause(connection, configuration, QProperty.property).execute();
+
+            new SQLDeleteClause(connection, configuration, QPermission.permission).execute();
+            new SQLDeleteClause(connection, configuration, QPermissionInheritance.permissionInheritance).execute();
+
             new SQLDeleteClause(connection, configuration, QEventData.eventData).execute();
             new SQLDeleteClause(connection, configuration, QEvent.event).execute();
             new SQLDeleteClause(connection, configuration, QEventType.eventType).execute();
             new SQLDeleteClause(connection, configuration, QApplication.application).execute();
+
+            new SQLDeleteClause(connection, configuration, QResource.resource).execute();
+
             return null;
         });
-        auditApplicationCache.clear();
-        auditEventTypeCache.clear();
+        clearAuditCaches();
     }
 
-    private long logDefaultEvent() {
-        AuditEvent event = new AuditEvent.Builder().eventTypeName("login")
-                .addStringEventData("string", "string")
-                .addTextEventData("text", false, "text")
-                .addNumberEventData("number", 10.75)
-                .addBinaryEventData("binary", new byte[] { 0, 1, 2, 3, 4 })
-                .addTimestampEventData("timestamp", Instant.now())
+    private long logEvent(final String eventTypeName) {
+        AuditEvent event = new AuditEvent.Builder().eventTypeName(eventTypeName)
+                .addStringEventData(STRING_N, STRING_V)
+                .addTextEventData(TEXT_N, false, TEXT_V)
+                .addNumberEventData(NUMBER_N, NUMBER_V)
+                .addTimestampEventData(TIMESTAMP_N, TIMESTAMP_V)
                 .build();
         loggingService.logEvent(event);
         return querydslSupport.execute((connection, configuration) -> {
@@ -135,8 +294,10 @@ public class AuditRiComponentTest {
         this.auditApplicationCache = auditApplicationCache;
     }
 
-    public void setAuditApplicationManager(final AuditApplicationManager auditApplicationManager) {
+    public void setAuditApplicationManager(final AuditApplicationManager auditApplicationManager,
+            final Map<String, Object> serviceProperties) {
         this.auditApplicationManager = auditApplicationManager;
+        testAuditApplicationName = String.valueOf(serviceProperties.get(AuditRiScr.PROP_AUDIT_APPLICATION_NAME));
     }
 
     public void setAuditEventTypeCache(final Map<?, ?> auditEventTypeCache) {
@@ -147,12 +308,28 @@ public class AuditRiComponentTest {
         this.auditEventTypeManager = auditEventTypeManager;
     }
 
+    public void setAuthenticationPropagator(final AuthenticationPropagator authenticationPropagator) {
+        this.authenticationPropagator = authenticationPropagator;
+    }
+
+    public void setAuthorizationManager(final AuthorizationManager authorizationManager) {
+        this.authorizationManager = authorizationManager;
+    }
+
     public void setInternalAuditEventTypeManager(final InternalAuditEventTypeManager internalAuditEventTypeManager) {
         this.internalAuditEventTypeManager = internalAuditEventTypeManager;
     }
 
     public void setLoggingService(final LoggingService loggingService) {
         this.loggingService = loggingService;
+    }
+
+    public void setPermissionChecker(final PermissionChecker permissionChecker) {
+        this.permissionChecker = permissionChecker;
+    }
+
+    public void setPropertyManager(final PropertyManager propertyManager) {
+        this.propertyManager = propertyManager;
     }
 
     public void setQuerydslSupport(final QuerydslSupport querydslSupport) {
@@ -163,117 +340,261 @@ public class AuditRiComponentTest {
         this.resourceService = resourceService;
     }
 
-    // @Test(expected = QueryException.class)
-    // public void testCreateApplicationConstraintViolation() {
-    // long resourceId = resourceService.createResource();
-    // String applicationName = UUID.randomUUID().toString();
-    // auditApplicationManager.createApplication(resourceId, applicationName);
-    // auditApplicationManager.createApplication(resourceId, applicationName);
-    // }
-    //
-    // @Test(expected = NullPointerException.class)
-    // public void testCreateApplicationFail() {
-    // auditApplicationManager.createApplication(0, null);
-    // }
+    public void setTransactionHelper(final TransactionHelper transactionHelper) {
+        this.transactionHelper = transactionHelper;
+    }
 
     @Test
-    public void testCreateApplicationSuccess() {
-        createAuditApplication();
-        QApplication qApplication = QApplication.application;
-        querydslSupport.execute((connection, configuration) -> {
-            AuditApplication result = new SQLQuery(connection, configuration)
-                    .from(qApplication)
-                    .where(qApplication.applicationName.eq(TEST_APPLICATION_NAME))
-                    .uniqueResult(Projections.fields(AuditApplication.class,
-                            qApplication.applicationId,
-                            qApplication.applicationName,
-                            qApplication.resourceId));
-            Assert.assertEquals(TEST_APPLICATION_NAME, result.getApplicationName());
-            Assert.assertNotNull(result.getResourceId());
+    public void testGetOrCreateAuditApplication() {
+
+        String applicationName = "application-1";
+
+        // no permission to read and create
+        try {
+            auditApplicationManager.getOrCreateApplication(applicationName);
+            Assert.fail();
+        } catch (UnauthorizedException e) {
+            Assert.assertTrue(e.getMessage().contains("not authorized"));
+        }
+
+        long authorizedResourceId = resourceService.createResource();
+
+        // add permission to create
+        authorizationManager.addPermission(authorizedResourceId, auditApplicationTargetResrouceId,
+                AuditRiPermissions.CREATE_AUDIT_APPLICATION);
+
+        AuditApplication newApplication = authenticationPropagator.runAs(authorizedResourceId, () -> {
+            // create
+                AuditApplication auditApplication = auditApplicationManager.getOrCreateApplication(applicationName);
+                Assert.assertNotNull(auditApplication);
+                return auditApplication;
+            });
+
+        // no permission to read and already exists
+        authenticationPropagator.runAs(authorizedResourceId, () -> {
+
+            try {
+                auditApplicationManager.getOrCreateApplication(applicationName);
+                Assert.fail();
+            } catch (QueryException e) {
+                Assert.assertTrue(e.getCause().getMessage().contains("unique_application_name"));
+            }
             return null;
         });
+
+        // add permission to read
+        authorizationManager.addPermission(authorizedResourceId, newApplication.resourceId,
+                AuditRiPermissions.READ_AUDIT_APPLICATION);
+
+        authenticationPropagator.runAs(authorizedResourceId, () -> {
+
+            // read from db
+                AuditApplication existingApplication = auditApplicationManager.getOrCreateApplication(applicationName);
+                Assert.assertNotNull(existingApplication);
+                Assert.assertEquals(newApplication, existingApplication);
+                Assert.assertEquals(newApplication.applicationId, existingApplication.applicationId);
+                Assert.assertEquals(newApplication.applicationName, existingApplication.applicationName);
+                Assert.assertEquals(newApplication.resourceId, existingApplication.resourceId);
+
+                // read from cache
+                AuditApplication cachedApplication = auditApplicationManager.getOrCreateApplication(applicationName);
+                Assert.assertEquals(existingApplication, cachedApplication);
+
+                return null;
+            });
+
+        // no permission to read but cached already
+        try {
+            auditApplicationManager.getOrCreateApplication(applicationName);
+            Assert.fail();
+        } catch (UnauthorizedException e) {
+            Assert.assertTrue(e.getMessage().contains("not authorized"));
+        }
+
     }
 
     @Test
-    public void testCreateEventType() {
-        AuditEventType actual = auditEventTypeManager.getOrCreateAuditEventTypes("login").get(0);
-        Assert.assertNotNull(actual);
-        Assert.assertEquals("login", actual.eventTypeName);
+    public void testGetOrCreateAuditApplicationNullName() {
+        try {
+            auditApplicationManager.getOrCreateApplication(null);
+            Assert.fail();
+        } catch (NullPointerException e) {
+            Assert.assertEquals("applicationName cannot be null", e.getMessage());
+        }
     }
 
     @Test
-    public void testGetOrCreateApplication() {
-        AuditApplication newApp = auditApplicationManager.getOrCreateApplication(TEST_APPLICATION_NAME);
-        Assert.assertNotNull(newApp);
-        AuditApplication existingApp = auditApplicationManager.getOrCreateApplication(TEST_APPLICATION_NAME);
-        Assert.assertNotNull(existingApp);
-        Assert.assertEquals(newApp.getApplicationId(), existingApp.getApplicationId());
-        Assert.assertEquals(newApp.getApplicationName(), existingApp.getApplicationName());
-        Assert.assertEquals(newApp.getResourceId(), existingApp.getResourceId());
-    }
+    public void testGetOrCreateAuditEventType() {
+        String eventTypeName = "test-event-type";
 
-    @Test(expected = NullPointerException.class)
-    public void testGetOrCreateApplicationNullName() {
-        auditApplicationManager.getOrCreateApplication(null);
+        // no permission to read and create
+        try {
+            auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeName);
+            Assert.fail();
+        } catch (UnauthorizedException e) {
+            Assert.assertTrue(e.getMessage().contains("not authorized"));
+        }
+
+        long authorizedResourceId = resourceService.createResource();
+
+        // add permission to create
+        authorizationManager.addPermission(authorizedResourceId, testAuditApplicationResourceId,
+                AuditRiPermissions.CREATE_AUDIT_EVENT_TYPE);
+
+        AuditEventType newEventType = authenticationPropagator.runAs(authorizedResourceId, () -> {
+            AuditEventType auditEventType = auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeName).get(0);
+            Assert.assertNotNull(auditEventType);
+            Assert.assertEquals(eventTypeName, auditEventType.eventTypeName);
+            return auditEventType;
+        });
+
+        // no permission to read and already exists
+        authenticationPropagator.runAs(authorizedResourceId, () -> {
+            try {
+                auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeName);
+            } catch (QueryException e) {
+                Assert.assertTrue(e.getCause().getMessage().contains("unique_application_id_event_type_name"));
+            }
+            return null;
+        });
+
+        // add permission to read
+        authorizationManager.addPermission(authorizedResourceId, newEventType.resourceId,
+                AuditRiPermissions.READ_AUDIT_EVENT_TYPE);
+
+        authenticationPropagator.runAs(authorizedResourceId, () -> {
+
+            // read from db
+                AuditEventType existingEventType = auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeName)
+                        .get(0);
+                Assert.assertNotNull(existingEventType);
+                Assert.assertEquals(newEventType, existingEventType);
+                Assert.assertEquals(newEventType.eventTypeId, existingEventType.eventTypeId);
+                Assert.assertEquals(newEventType.eventTypeName, existingEventType.eventTypeName);
+                Assert.assertEquals(newEventType.resourceId, existingEventType.resourceId);
+
+                // read from cache
+                AuditEventType cachedEventType = auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeName)
+                        .get(0);
+                Assert.assertEquals(existingEventType, cachedEventType);
+
+                return null;
+            });
+
+        // no permission to read but cached already
+        try {
+            auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeName);
+            Assert.fail();
+        } catch (UnauthorizedException e) {
+            Assert.assertTrue(e.getMessage().contains("not authorized"));
+        }
+
+        // invoke with multiple event types
+        authenticationPropagator.runAs(authorizedResourceId, () -> {
+
+            List<AuditEventType> auditEventTypes =
+                    auditEventTypeManager.getOrCreateAuditEventTypes("et1", "et2", "et3");
+            Assert.assertEquals(3, auditEventTypes.size());
+
+            return null;
+        });
+
+        // add permission to read application only
+        clearPermissions();
+        authorizationManager.addPermission(authorizedResourceId, testAuditApplicationResourceId,
+                AuditRiPermissions.READ_AUDIT_APPLICATION);
+
+        authenticationPropagator.runAs(authorizedResourceId, () -> {
+            AuditEventType cachedEventType = auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeName).get(0);
+            Assert.assertEquals(newEventType, cachedEventType);
+            return null;
+        });
+
     }
 
     @Test
-    public void testGetOrCreateEventTypes() {
-        List<AuditEventType> auditEventTypes = auditEventTypeManager.getOrCreateAuditEventTypes(
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString());
-        Assert.assertEquals(3, auditEventTypes.size());
-    }
-
-    @Test
-    public void testGetOrCreateEventTypesEmpty() {
+    public void testGetOrCreateAuditEventTypesEmpty() {
         Assert.assertTrue(auditEventTypeManager.getOrCreateAuditEventTypes().isEmpty());
     }
 
     @Test
-    public void testGetOrCreateEventTypesForApplicationFail() {
-        String nonExistentApplicationName = UUID.randomUUID().toString();
+    public void testGetOrCreateAuditEventTypesForApplicationFail() {
+        String nonExistentApplicationName = "non-existent-application";
+        String eventTypeName = "random-event-type";
         try {
-            internalAuditEventTypeManager.getOrCreateAuditEventTypes(nonExistentApplicationName, "login");
+            internalAuditEventTypeManager.getOrCreateAuditEventTypes(nonExistentApplicationName, eventTypeName);
             Assert.fail();
         } catch (IllegalArgumentException e) {
             String message = e.getMessage();
-            Assert.assertTrue(message,
-                    message.contains(nonExistentApplicationName) && message.contains("does not exist"));
+            Assert.assertTrue(message, message.contains(nonExistentApplicationName)
+                    && message.contains("does not exist"));
         }
     }
 
-    @Test(expected = NullPointerException.class)
-    public void testGetOrCreateEventTypesNullEventName() {
-        auditEventTypeManager.getOrCreateAuditEventTypes((String) null);
-    }
-
     @Test
-    public void testGetOrCreateEventTypesSame() {
-        AuditEventType firstEvtType = auditEventTypeManager.getOrCreateAuditEventTypes("login").get(0);
-        AuditEventType secondEvtType = auditEventTypeManager.getOrCreateAuditEventTypes("login").get(0);
-        Assert.assertEquals(firstEvtType.eventTypeId, secondEvtType.eventTypeId);
+    public void testGetOrCreateAuditEventTypesNullEventName() {
+        try {
+            String[] eventTypeNames = null;
+            auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeNames);
+            Assert.fail();
+        } catch (NullPointerException e) {
+            Assert.assertEquals("eventTypeNames cannot be null", e.getMessage());
+        }
+        try {
+            String[] eventTypeNames = new String[] { null };
+            auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeNames);
+            Assert.fail();
+        } catch (NullPointerException e) {
+            Assert.assertEquals("eventTypeName cannot be null", e.getMessage());
+        }
     }
 
     @Test
     public void testLogEvent() {
-        createAuditApplication();
-        logDefaultEvent();
-        querydslSupport.execute((connection, configuration) -> {
-            QEvent qEvent = QEvent.event;
-            Long eventId = new SQLQuery(connection, configuration)
-                    .from(qEvent).limit(1)
-                    .uniqueResult(ConstructorExpression.create(Long.class, qEvent.eventId));
-            Assert.assertNotNull(eventId);
-            QEventData qEventData = QEventData.eventData;
-            long dataCount = new SQLQuery(connection, configuration)
-                    .from(qEventData)
-                    .where(qEventData.eventId.eq(eventId))
-                    .count();
-            Assert.assertEquals(5, dataCount);
+        String eventTypeNameA = "event-type-a";
+        String eventTypeNameB = "event-type-b";
+
+        // no permission to log application and event type
+        try {
+            logEvent(eventTypeNameA);
+            Assert.fail();
+        } catch (UnauthorizedException e) {
+            Assert.assertTrue(e.getMessage().contains("not authorized"));
+        }
+
+        long authorizedResourceId = resourceService.createResource();
+
+        // add permission to log event type A
+        long systemResourceId = permissionChecker.getSystemResourceId();
+        AuditEventType auditEventTypeA = authenticationPropagator.runAs(systemResourceId, () -> {
+            return auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeNameA).get(0);
+        });
+        authorizationManager.addPermission(authorizedResourceId, auditEventTypeA.resourceId,
+                AuditRiPermissions.LOG_TO_EVENT_TYPE);
+
+        authenticationPropagator.runAs(authorizedResourceId, () -> {
+
+            logEvent(eventTypeNameA);
+            assertEvent(eventTypeNameA);
+
             return null;
         });
+
+        clearPermissions();
+
+        // add permission to log application
+        authorizationManager.addPermission(authorizedResourceId, testAuditApplicationResourceId,
+                AuditRiPermissions.LOG_TO_AUDIT_APPLICATION);
+
+        authenticationPropagator.runAs(authorizedResourceId, () -> {
+
+            logEvent(eventTypeNameA);
+            logEvent(eventTypeNameB);
+            assertEvent(eventTypeNameB);
+
+            return null;
+        });
+
     }
 
 }

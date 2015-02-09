@@ -51,8 +51,6 @@ public class QEventData extends com.mysema.query.sql.RelationalPathBase<QEventDa
 
     }
 
-    public final SimplePath<java.sql.Blob> binaryValue = createSimple("binaryValue", java.sql.Blob.class);
-
     public final NumberPath<Long> eventDataId = createNumber("eventDataId", Long.class);
 
     public final StringPath eventDataName = createString("eventDataName");
@@ -94,7 +92,6 @@ public class QEventData extends com.mysema.query.sql.RelationalPathBase<QEventDa
     }
 
     public void addMetadata() {
-        addMetadata(binaryValue, ColumnMetadata.named("binary_value").ofType(2004).withSize(2147483647));
         addMetadata(eventDataId, ColumnMetadata.named("event_data_id").ofType(-5).withSize(19).notNull());
         addMetadata(eventDataName, ColumnMetadata.named("event_data_name").ofType(12).withSize(255).notNull());
         addMetadata(eventDataType, ColumnMetadata.named("event_data_type").ofType(12).withSize(32).notNull());

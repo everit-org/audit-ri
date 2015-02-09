@@ -29,7 +29,7 @@
         <constraints primaryKey="true" />
       </column>
       <column name="application_name" type="varchar(255)">
-        <constraints unique="true" nullable="false" />
+        <constraints unique="true" uniqueConstraintName="unique_application_name" nullable="false" />
       </column>
       <column name="resource_id" type="bigint">
         <constraints unique="true" nullable="false" />
@@ -93,7 +93,6 @@
       </column>
       <column name="string_value" type="varchar(2000)" />
       <column name="number_value" type="double" />
-      <column name="binary_value" type="blob" />
       <column name="text_value" type="text" />
       <column name="timestamp_value" type="timestamp" />
     </createTable>

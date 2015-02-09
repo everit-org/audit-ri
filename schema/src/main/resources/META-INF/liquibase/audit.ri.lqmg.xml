@@ -17,7 +17,8 @@
     along with org.everit.osgi.audit.ri.schema.  If not, see <http://www.gnu.org/licenses/>.
 
 -->
-<lqmg xmlns="http://everit.org/lqmg" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" defaultPackage="org.everit.osgi.audit.ri.schema.qdsl">
+<lqmg xmlns="http://everit.org/lqmg" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" defaultPackage="org.everit.osgi.audit.ri.schema.qdsl"
+  xsi:schemaLocation="http://everit.org/lqmg http://www.everit.org/xml/ns/lqmg/lqmg-3.0.0.xsd">
   <namingRules>
     <classNameRule>
       <entity>audit_application</entity>
