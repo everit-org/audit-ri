@@ -16,6 +16,9 @@
  */
 package org.everit.osgi.audit.ri;
 
+/**
+ * Audit RI Component configuration properties.
+ */
 public final class AuditRiScr {
 
     public static final String SERVICE_FACTORY_PID = "org.everit.osgi.audit.ri.AuditComponent";

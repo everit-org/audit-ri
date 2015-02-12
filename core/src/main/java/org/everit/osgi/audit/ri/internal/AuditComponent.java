@@ -160,7 +160,7 @@ public class AuditComponent implements
 
     private String auditApplicationName;
 
-    private long auditApplicationTargetResourceId;
+    private long auditApplicationTypeTargetResourceId;
 
     @Activate
     public void activate(final Map<String, Object> componentProperties) {
@@ -171,16 +171,16 @@ public class AuditComponent implements
             return transactionHelper.required(() -> {
 
                 String auditApplicationTargetResourceIdString =
-                        propertyManager.getProperty(AuditRiProps.AUDIT_APPLICATION_TARGET_RESOURCE_ID);
+                        propertyManager.getProperty(AuditRiProps.AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID);
 
                 if (auditApplicationTargetResourceIdString == null) {
 
-                    auditApplicationTargetResourceId = resourceService.createResource();
-                    propertyManager.addProperty(AuditRiProps.AUDIT_APPLICATION_TARGET_RESOURCE_ID,
-                            String.valueOf(auditApplicationTargetResourceId));
+                    auditApplicationTypeTargetResourceId = resourceService.createResource();
+                    propertyManager.addProperty(AuditRiProps.AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID,
+                            String.valueOf(auditApplicationTypeTargetResourceId));
 
                 } else {
-                    auditApplicationTargetResourceId = Long.valueOf(auditApplicationTargetResourceIdString);
+                    auditApplicationTypeTargetResourceId = Long.valueOf(auditApplicationTargetResourceIdString);
                 }
 
                 auditApplicationName = String.valueOf(componentProperties.get(AuditRiScr.PROP_AUDIT_APPLICATION_NAME));
@@ -216,7 +216,7 @@ public class AuditComponent implements
 
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
 
-        authnrPermissionChecker.checkPermission(auditApplicationTargetResourceId,
+        authnrPermissionChecker.checkPermission(auditApplicationTypeTargetResourceId,
                 AuditRiPermissions.CREATE_AUDIT_APPLICATION);
 
         return transactionHelper.required(() -> {
@@ -305,6 +305,11 @@ public class AuditComponent implements
         });
     }
 
+    @Override
+    public long getAuditApplicationTypeTargetResourceId() {
+        return auditApplicationTypeTargetResourceId;
+    }
+
     private AuditEventType getAuditEventType(final String applicationName, final String eventTypeName,
             final boolean withPermissionCheck) {
 
@@ -363,6 +368,7 @@ public class AuditComponent implements
     public List<AuditEventType> getOrCreateAuditEventTypes(final String applicationName,
             final String... eventTypeNames) {
 
+        Objects.requireNonNull(applicationName, "applicationName cannot be null");
         Objects.requireNonNull(eventTypeNames, "eventTypeNames cannot be null");
         if (eventTypeNames.length == 0) {
             return Collections.emptyList();
@@ -385,6 +391,7 @@ public class AuditComponent implements
     @Override
     public void logEvent(final String applicationName, final AuditEvent auditEvent) {
 
+        Objects.requireNonNull(applicationName, "applicationName cannot be null");
         Objects.requireNonNull(auditEvent, "auditEvent cannot be null");
 
         transactionHelper.required(() -> {

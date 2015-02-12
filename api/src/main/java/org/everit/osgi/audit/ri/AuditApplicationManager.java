@@ -18,14 +18,25 @@ package org.everit.osgi.audit.ri;
 
 import org.everit.osgi.audit.ri.dto.AuditApplication;
 
+/**
+ * Interface to manage audit applications.
+ */
 public interface AuditApplicationManager {
+
+    /**
+     * Returns the resourceId used for authorization and permission checking in case of
+     * {@link AuditRiPermissions#CREATE_AUDIT_APPLICATION}.
+     *
+     * @return the resourceId of the audit application type
+     */
+    long getAuditApplicationTypeTargetResourceId();
 
     /**
      * Returns the application by its name if exists, otherwise creates an application and assigns it to a new resource
      * automatically.
      *
      * @param applicationName
-     *            The name of the application.
+     *            The name of the application, cannot be null.
      * @return the created {@link AuditApplication}
      * @throws NullPointerException
      *             if {@code applicationName} is <code>null</code>

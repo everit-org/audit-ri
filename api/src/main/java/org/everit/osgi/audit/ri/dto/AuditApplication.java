@@ -18,8 +18,14 @@ package org.everit.osgi.audit.ri.dto;
 
 import java.util.Objects;
 
+/**
+ * The audit application holds the audit events.
+ */
 public class AuditApplication {
 
+    /**
+     * Builder class to create the audit application easily.
+     */
     public static class Builder {
 
         private long applicationId;
@@ -28,9 +34,18 @@ public class AuditApplication {
 
         private long resourceId;
 
+        /**
+         * Default constructor.
+         */
         public Builder() {
         }
 
+        /**
+         * Deep copy constructor.
+         *
+         * @param auditApplication
+         *            the original audit application to copy deeply, cannot be <code>null</code>.
+         */
         public Builder(final AuditApplication auditApplication) {
             Objects.requireNonNull(auditApplication, "auditApplication cannot be null");
             applicationId = auditApplication.applicationId;
@@ -58,15 +73,33 @@ public class AuditApplication {
         }
     }
 
+    /**
+     * The identifier of the audit application.
+     */
     public long applicationId;
 
+    /**
+     * The name of the audit application.
+     */
     public String applicationName;
 
+    /**
+     * The resourceId belonging to the application.
+     */
     public long resourceId;
 
+    /**
+     * Default constructor.
+     */
     public AuditApplication() {
     }
 
+    /**
+     * Deep copy constructor.
+     *
+     * @param original
+     *            the original instance to copy deeply, cannot be <code>null</code>.
+     */
     public AuditApplication(final AuditApplication original) {
         Objects.requireNonNull(original, "original cannot be null");
         applicationId = original.applicationId;
@@ -79,12 +112,6 @@ public class AuditApplication {
         applicationName = Objects.requireNonNull(builder.applicationName, "applicationName cannot be null");
         resourceId = builder.resourceId;
     }
-
-    // public AuditApplication(final long applicationId, final String applicationName, final long resourceId) {
-    // this.applicationId = applicationId;
-    // this.applicationName = Objects.requireNonNull(applicationName, "applicationName cannot be null");
-    // this.resourceId = resourceId;
-    // }
 
     @Override
     public boolean equals(final Object obj) {

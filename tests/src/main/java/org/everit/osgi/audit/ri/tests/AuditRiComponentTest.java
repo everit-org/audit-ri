@@ -38,7 +38,6 @@ import org.everit.osgi.audit.dto.EventData.Builder;
 import org.everit.osgi.audit.dto.EventDataType;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
 import org.everit.osgi.audit.ri.AuditRiPermissions;
-import org.everit.osgi.audit.ri.AuditRiProps;
 import org.everit.osgi.audit.ri.AuditRiScr;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.dto.AuditApplication;
@@ -53,7 +52,6 @@ import org.everit.osgi.authorization.PermissionChecker;
 import org.everit.osgi.authorization.ri.schema.qdsl.QPermission;
 import org.everit.osgi.authorization.ri.schema.qdsl.QPermissionInheritance;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
-import org.everit.osgi.props.PropertyManager;
 import org.everit.osgi.props.ri.schema.qdsl.QProperty;
 import org.everit.osgi.querydsl.support.QuerydslSupport;
 import org.everit.osgi.resource.ResourceService;
@@ -85,8 +83,7 @@ import com.mysema.query.sql.dml.SQLDeleteClause;
         @Property(name = "auditEventTypeCache.target", value = "(service.description=audit-event-type-cache)"),
         @Property(name = "permissionChecker.target"),
         @Property(name = "authenticationPropagator.target"),
-        @Property(name = "authorizationManager.target"),
-        @Property(name = "propertyManager.target")
+        @Property(name = "authorizationManager.target")
 })
 @Service(AuditRiComponentTest.class)
 public class AuditRiComponentTest {
@@ -143,11 +140,6 @@ public class AuditRiComponentTest {
     @Reference(bind = "setAuthorizationManager")
     private AuthorizationManager authorizationManager;
 
-    @Reference(bind = "setPropertyManager")
-    private PropertyManager propertyManager;
-
-    private long auditApplicationTargetResrouceId;
-
     private String testAuditApplicationName;
 
     private long testAuditApplicationResourceId;
@@ -156,15 +148,12 @@ public class AuditRiComponentTest {
 
     @Activate
     public void activate() {
-        auditApplicationTargetResrouceId =
-                Long.valueOf(propertyManager.getProperty(AuditRiProps.AUDIT_APPLICATION_TARGET_RESOURCE_ID));
 
         systemResourceId = permissionChecker.getSystemResourceId();
 
         AuditApplication testAuditApplication = authenticationPropagator.runAs(systemResourceId, () -> {
             return auditApplicationManager.getOrCreateApplication(testAuditApplicationName);
         });
-
         testAuditApplicationResourceId = testAuditApplication.resourceId;
 
     }
@@ -328,10 +317,6 @@ public class AuditRiComponentTest {
         this.permissionChecker = permissionChecker;
     }
 
-    public void setPropertyManager(final PropertyManager propertyManager) {
-        this.propertyManager = propertyManager;
-    }
-
     public void setQuerydslSupport(final QuerydslSupport querydslSupport) {
         this.querydslSupport = querydslSupport;
     }
@@ -360,7 +345,8 @@ public class AuditRiComponentTest {
         long authorizedResourceId = resourceService.createResource();
 
         // add permission to create
-        authorizationManager.addPermission(authorizedResourceId, auditApplicationTargetResrouceId,
+        authorizationManager.addPermission(authorizedResourceId,
+                auditApplicationManager.getAuditApplicationTypeTargetResourceId(),
                 AuditRiPermissions.CREATE_AUDIT_APPLICATION);
 
         AuditApplication newApplication = authenticationPropagator.runAs(authorizedResourceId, () -> {
