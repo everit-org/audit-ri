@@ -24,6 +24,7 @@
   <include file="eosgi:org.everit.osgi.resource.ri" />
 
   <changeSet id="1.0.0" author="everit">
+
     <createTable tableName="audit_application">
       <column name="application_id" type="bigint" autoIncrement="true">
         <constraints primaryKey="true" />
@@ -66,6 +67,9 @@
     <createTable tableName="audit_event">
       <column name="event_id" type="bigint" autoIncrement="true">
         <constraints primaryKey="true" />
+      </column>
+      <column name="created_at" type="timestamp">
+        <constraints nullable="false" />
       </column>
       <column name="occured_at" type="timestamp">
         <constraints nullable="false" />

@@ -26,7 +26,7 @@ import org.everit.osgi.audit.dto.AuditEventType;
 public interface InternalAuditEventTypeManager {
 
     /**
-     * Lazily creates the {@link AuditEventType}s assigned to the given audit applicaiton.
+     * Lazily creates the {@link AuditEventType}s assigned to the given audit application.
      *
      * @param applicationName
      *            the event types will belong to this audit application

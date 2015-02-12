@@ -38,7 +38,7 @@ import org.everit.osgi.audit.dto.EventData.Builder;
 import org.everit.osgi.audit.dto.EventDataType;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
 import org.everit.osgi.audit.ri.AuditRiPermissions;
-import org.everit.osgi.audit.ri.AuditRiScr;
+import org.everit.osgi.audit.ri.AuditRiComponentProps;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.dto.AuditApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
@@ -286,7 +286,7 @@ public class AuditRiComponentTest {
     public void setAuditApplicationManager(final AuditApplicationManager auditApplicationManager,
             final Map<String, Object> serviceProperties) {
         this.auditApplicationManager = auditApplicationManager;
-        testAuditApplicationName = String.valueOf(serviceProperties.get(AuditRiScr.PROP_AUDIT_APPLICATION_NAME));
+        testAuditApplicationName = String.valueOf(serviceProperties.get(AuditRiComponentProps.PROP_AUDIT_APPLICATION_NAME));
     }
 
     public void setAuditEventTypeCache(final Map<?, ?> auditEventTypeCache) {

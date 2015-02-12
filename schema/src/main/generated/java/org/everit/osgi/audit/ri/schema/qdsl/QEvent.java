@@ -53,6 +53,8 @@ public class QEvent extends com.mysema.query.sql.RelationalPathBase<QEvent> {
 
     }
 
+    public final DateTimePath<java.sql.Timestamp> createdAt = createDateTime("createdAt", java.sql.Timestamp.class);
+
     public final NumberPath<Long> eventId = createNumber("eventId", Long.class);
 
     public final NumberPath<Long> eventTypeId = createNumber("eventTypeId", Long.class);
@@ -84,6 +86,7 @@ public class QEvent extends com.mysema.query.sql.RelationalPathBase<QEvent> {
     }
 
     public void addMetadata() {
+        addMetadata(createdAt, ColumnMetadata.named("created_at").ofType(93).withSize(23).withDigits(10).notNull());
         addMetadata(eventId, ColumnMetadata.named("event_id").ofType(-5).withSize(19).notNull());
         addMetadata(eventTypeId, ColumnMetadata.named("event_type_id").ofType(-5).withSize(19).notNull());
         addMetadata(occuredAt, ColumnMetadata.named("occured_at").ofType(93).withSize(23).withDigits(10).notNull());

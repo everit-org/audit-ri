@@ -17,6 +17,7 @@
 package org.everit.osgi.audit.ri.internal;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,9 +38,9 @@ import org.everit.osgi.audit.dto.AuditEvent;
 import org.everit.osgi.audit.dto.AuditEventType;
 import org.everit.osgi.audit.dto.EventData;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
+import org.everit.osgi.audit.ri.AuditRiComponentProps;
 import org.everit.osgi.audit.ri.AuditRiPermissions;
 import org.everit.osgi.audit.ri.AuditRiProps;
-import org.everit.osgi.audit.ri.AuditRiScr;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.InternalLoggingService;
 import org.everit.osgi.audit.ri.dto.AuditApplication;
@@ -61,19 +62,19 @@ import com.mysema.query.types.Projections;
 import com.mysema.query.types.expr.BooleanExpression;
 import com.mysema.query.types.template.BooleanTemplate;
 
-@Component(name = AuditRiScr.SERVICE_FACTORY_PID, metatype = true, configurationFactory = true,
+@Component(name = AuditRiComponentProps.SERVICE_FACTORY_PID, metatype = true, configurationFactory = true,
         policy = ConfigurationPolicy.REQUIRE)
 @Properties({
-        @Property(name = AuditRiScr.PROP_TRASACTION_HELPER),
-        @Property(name = AuditRiScr.PROP_QUERYDSL_SUPPORT),
-        @Property(name = AuditRiScr.PROP_RESOURCE_SERVICE),
-        @Property(name = AuditRiScr.PROP_AUDIT_APPLICATION_NAME),
-        @Property(name = AuditRiScr.PROP_AUDIT_APPLICATION_CACHE),
-        @Property(name = AuditRiScr.PROP_AUDIT_EVENT_TYPE_CACHE),
-        @Property(name = AuditRiScr.PROP_AUTHNR_PERMISSION_CHECKER),
-        @Property(name = AuditRiScr.PROP_AUTHNR_QDSL_UTIL),
-        @Property(name = AuditRiScr.PROP_AUTHENTICATION_PROPAGATOR),
-        @Property(name = AuditRiScr.PROP_PROPERTY_MANAGER)
+        @Property(name = AuditRiComponentProps.PROP_TRASACTION_HELPER),
+        @Property(name = AuditRiComponentProps.PROP_QUERYDSL_SUPPORT),
+        @Property(name = AuditRiComponentProps.PROP_RESOURCE_SERVICE),
+        @Property(name = AuditRiComponentProps.PROP_AUDIT_APPLICATION_NAME),
+        @Property(name = AuditRiComponentProps.PROP_AUDIT_APPLICATION_CACHE),
+        @Property(name = AuditRiComponentProps.PROP_AUDIT_EVENT_TYPE_CACHE),
+        @Property(name = AuditRiComponentProps.PROP_AUTHNR_PERMISSION_CHECKER),
+        @Property(name = AuditRiComponentProps.PROP_AUTHNR_QDSL_UTIL),
+        @Property(name = AuditRiComponentProps.PROP_AUTHENTICATION_PROPAGATOR),
+        @Property(name = AuditRiComponentProps.PROP_PROPERTY_MANAGER)
 })
 @Service
 public class AuditComponent implements
@@ -183,7 +184,8 @@ public class AuditComponent implements
                     auditApplicationTypeTargetResourceId = Long.valueOf(auditApplicationTargetResourceIdString);
                 }
 
-                auditApplicationName = String.valueOf(componentProperties.get(AuditRiScr.PROP_AUDIT_APPLICATION_NAME));
+                auditApplicationName = String.valueOf(componentProperties
+                        .get(AuditRiComponentProps.PROP_AUDIT_APPLICATION_NAME));
                 getOrCreateApplication(auditApplicationName);
 
                 return null;
@@ -374,6 +376,9 @@ public class AuditComponent implements
             return Collections.emptyList();
         }
 
+        // 1. cache olvasas
+        // 2. maradek select dbbol + cache iras
+        // 3. maradek transaction + lock app + insert db
         return transactionHelper.required(() -> {
             List<AuditEventType> rval = new ArrayList<AuditEventType>();
             for (String typeName : eventTypeNames) {
@@ -412,6 +417,7 @@ public class AuditComponent implements
                 QEvent qEvent = QEvent.event;
 
                 long eventId = new SQLInsertClause(connection, configuration, qEvent)
+                        .set(qEvent.createdAt, Timestamp.from(Instant.now()))
                         .set(qEvent.occuredAt, Timestamp.from(auditEvent.occuredAt))
                         .set(qEvent.eventTypeId, auditEventType.eventTypeId)
                         .executeWithKey(qEvent.eventId);
