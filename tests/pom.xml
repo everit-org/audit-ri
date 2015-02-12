@@ -59,7 +59,7 @@
             <Provide-Capability>
               liquibase.schema;name=org.everit.osgi.audit.ri.tests;resource=/META-INF/liquibase/audit.ri.tests.liquibase.xml
             </Provide-Capability>
-            <EOSGi-TestNum>7</EOSGi-TestNum>
+            <EOSGi-TestNum>8</EOSGi-TestNum>
           </instructions>
         </configuration>
       </plugin>

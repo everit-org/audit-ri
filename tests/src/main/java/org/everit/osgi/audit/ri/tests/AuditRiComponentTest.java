@@ -597,4 +597,14 @@ public class AuditRiComponentTest {
 
     }
 
+    @Test
+    public void testLogEventNull() {
+        try {
+            loggingService.logEvent(null);
+            Assert.fail();
+        } catch (NullPointerException e) {
+            Assert.assertTrue(e.getMessage().equals("auditEvent cannot be null"));
+        }
+    }
+
 }

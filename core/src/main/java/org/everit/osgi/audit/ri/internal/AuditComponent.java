@@ -385,6 +385,8 @@ public class AuditComponent implements
     @Override
     public void logEvent(final String applicationName, final AuditEvent auditEvent) {
 
+        Objects.requireNonNull(auditEvent, "auditEvent cannot be null");
+
         transactionHelper.required(() -> {
 
             AuditEventType auditEventType = getOrCreateAuditEventType(applicationName,
