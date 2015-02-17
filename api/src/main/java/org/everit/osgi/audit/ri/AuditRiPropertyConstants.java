@@ -16,22 +16,25 @@
  */
 package org.everit.osgi.audit.ri;
 
-import org.everit.osgi.audit.ri.authorization.AuditRiPermissions;
+import org.everit.osgi.audit.ri.authorization.AuditRiPermissionConstants;
 
 /**
  * Property keys used by the Audit RI.
  */
-public final class AuditRiProps {
+public final class AuditRiPropertyConstants {
+
+    // TODO static block + package
 
     private static final String PREFIX = "org.everit.osgi.audit.ri.props.";
 
     /**
-     * Property key to identify the target resourceId used by the {@link AuditRiPermissions#CREATE_AUDIT_APPLICATION}.
+     * Property key to identify the target resourceId used by the
+     * {@link AuditRiPermissionConstants#CREATE_AUDIT_APPLICATION}.
      */
     public static final String AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID =
             PREFIX + "AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID";
 
-    private AuditRiProps() {
+    private AuditRiPropertyConstants() {
     }
 
 }

@@ -37,9 +37,9 @@ import org.everit.osgi.audit.dto.EventData;
 import org.everit.osgi.audit.dto.EventData.Builder;
 import org.everit.osgi.audit.dto.EventDataType;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
-import org.everit.osgi.audit.ri.AuditRiComponentProps;
+import org.everit.osgi.audit.ri.AuditRiComponentConstants;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
-import org.everit.osgi.audit.ri.authorization.AuditRiPermissions;
+import org.everit.osgi.audit.ri.authorization.AuditRiPermissionConstants;
 import org.everit.osgi.audit.ri.dto.AuditApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
@@ -287,7 +287,7 @@ public class AuditRiComponentTest {
             final Map<String, Object> serviceProperties) {
         this.auditApplicationManager = auditApplicationManager;
         embeddedAuditApplicationName = String.valueOf(
-                serviceProperties.get(AuditRiComponentProps.PROP_EMBEDDED_AUDIT_APPLICATION_NAME));
+                serviceProperties.get(AuditRiComponentConstants.PROP_EMBEDDED_AUDIT_APPLICATION_NAME));
     }
 
     public void setAuditEventTypeCache(final Map<?, ?> auditEventTypeCache) {
@@ -348,7 +348,7 @@ public class AuditRiComponentTest {
         // add permission to create
         authorizationManager.addPermission(authorizedResourceId,
                 auditApplicationManager.getAuditApplicationTypeTargetResourceId(),
-                AuditRiPermissions.CREATE_AUDIT_APPLICATION);
+                AuditRiPermissionConstants.CREATE_AUDIT_APPLICATION);
 
         AuditApplication newApplication = authenticationPropagator.runAs(authorizedResourceId, () -> {
             // create
@@ -371,7 +371,7 @@ public class AuditRiComponentTest {
 
         // add permission to read
         authorizationManager.addPermission(authorizedResourceId, newApplication.resourceId,
-                AuditRiPermissions.READ_AUDIT_APPLICATION);
+                AuditRiPermissionConstants.READ_AUDIT_APPLICATION);
 
         authenticationPropagator.runAs(authorizedResourceId, () -> {
 
@@ -426,7 +426,7 @@ public class AuditRiComponentTest {
 
         // add permission to create
         authorizationManager.addPermission(authorizedResourceId, testAuditApplicationResourceId,
-                AuditRiPermissions.CREATE_AUDIT_EVENT_TYPE);
+                AuditRiPermissionConstants.CREATE_AUDIT_EVENT_TYPE);
 
         AuditEventType newEventType = authenticationPropagator.runAs(authorizedResourceId, () -> {
             AuditEventType auditEventType = auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeName).get(0);
@@ -447,7 +447,7 @@ public class AuditRiComponentTest {
 
         // add permission to read
         authorizationManager.addPermission(authorizedResourceId, newEventType.resourceId,
-                AuditRiPermissions.READ_AUDIT_EVENT_TYPE);
+                AuditRiPermissionConstants.READ_AUDIT_EVENT_TYPE);
 
         authenticationPropagator.runAs(authorizedResourceId, () -> {
 
@@ -489,7 +489,7 @@ public class AuditRiComponentTest {
         // add permission to read application only
         clearPermissions();
         authorizationManager.addPermission(authorizedResourceId, testAuditApplicationResourceId,
-                AuditRiPermissions.READ_AUDIT_APPLICATION);
+                AuditRiPermissionConstants.READ_AUDIT_APPLICATION);
 
         authenticationPropagator.runAs(authorizedResourceId, () -> {
             AuditEventType cachedEventType = auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeName).get(0);
@@ -557,7 +557,7 @@ public class AuditRiComponentTest {
             return auditEventTypeManager.getOrCreateAuditEventTypes(eventTypeNameA).get(0);
         });
         authorizationManager.addPermission(authorizedResourceId, auditEventTypeA.resourceId,
-                AuditRiPermissions.LOG_TO_EVENT_TYPE);
+                AuditRiPermissionConstants.LOG_TO_EVENT_TYPE);
 
         authenticationPropagator.runAs(authorizedResourceId, () -> {
 
@@ -571,7 +571,7 @@ public class AuditRiComponentTest {
 
         // add permission to log application
         authorizationManager.addPermission(authorizedResourceId, testAuditApplicationResourceId,
-                AuditRiPermissions.LOG_TO_AUDIT_APPLICATION);
+                AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
 
         authenticationPropagator.runAs(authorizedResourceId, () -> {
 

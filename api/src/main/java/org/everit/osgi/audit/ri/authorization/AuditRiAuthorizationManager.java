@@ -1,6 +1,6 @@
 package org.everit.osgi.audit.ri.authorization;
 
-public interface AuditRiPermissionManager {
+public interface AuditRiAuthorizationManager {
 
     void addPermissionToInitAuditApplication(long authorizedResourceId);
 

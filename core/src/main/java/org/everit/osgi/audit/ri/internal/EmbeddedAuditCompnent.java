@@ -13,16 +13,16 @@ import org.everit.osgi.audit.AuditEventTypeManager;
 import org.everit.osgi.audit.LoggingService;
 import org.everit.osgi.audit.dto.AuditEvent;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
-import org.everit.osgi.audit.ri.AuditRiComponentProps;
+import org.everit.osgi.audit.ri.AuditRiComponentConstants;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.InternalLoggingService;
 import org.everit.osgi.authentication.context.AuthenticationPropagator;
 import org.everit.osgi.authorization.PermissionChecker;
 
-@Component(name = AuditRiComponentProps.EMBEDDED_SERVICE_FACTORY_PID, metatype = true, configurationFactory = true,
+@Component(name = AuditRiComponentConstants.EMBEDDED_SERVICE_FACTORY_PID, metatype = true, configurationFactory = true,
         policy = ConfigurationPolicy.REQUIRE)
 @Properties({
-        @Property(name = AuditRiComponentProps.PROP_EMBEDDED_AUDIT_APPLICATION_NAME),
+        @Property(name = AuditRiComponentConstants.PROP_EMBEDDED_AUDIT_APPLICATION_NAME),
         @Property(name = "auditApplicationManager.target"),
         @Property(name = "internalAuditEventTypeManager.target"),
         @Property(name = "internalLoggingService.target"),
@@ -55,7 +55,7 @@ public class EmbeddedAuditCompnent implements
     public void activate(final Map<String, Object> componentProperties) {
 
         embeddedAuditApplicationName = String.valueOf(
-                componentProperties.get(AuditRiComponentProps.PROP_EMBEDDED_AUDIT_APPLICATION_NAME));
+                componentProperties.get(AuditRiComponentConstants.PROP_EMBEDDED_AUDIT_APPLICATION_NAME));
 
         long systemResourceId = permissionChecker.getSystemResourceId();
 

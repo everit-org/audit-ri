@@ -16,14 +16,14 @@
  */
 package org.everit.osgi.audit.ri.authorization;
 
-import org.everit.osgi.audit.ri.AuditRiProps;
+import org.everit.osgi.audit.ri.AuditRiPropertyConstants;
 
 /**
  * Permission actions used by the implementation.
  */
-public final class AuditRiPermissions {
+public final class AuditRiPermissionConstants {
 
-    private static final String PREFIX = "org.everit.osgi.audit.ri.permission.";
+    private static final String PREFIX;
 
     /**
      * Permission to create audit applications. <br>
@@ -31,18 +31,25 @@ public final class AuditRiPermissions {
      * <b>TARGET_RESOURCE_ID</b>: the resourceId returned by the
      * {@link AuditRiPermissionChecker#getAuditApplicationTypeTargetResourceId()} method, it is stored as a property in
      * the {@link org.everit.osgi.props.PropertyManager} with key
-     * {@link AuditRiProps#AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID}.
+     * {@link AuditRiPropertyConstants#AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID}.
      */
-    public static final String INIT_AUDIT_APPLICATION = PREFIX + "INIT_AUDIT_APPLICATION";
+    public static final String INIT_AUDIT_APPLICATION;
 
+    // TODO fix javadoc
     /**
      * Permission to log any kind of audit event type to an audit application. <br>
      * <br>
      * <b>TARGET_RESOURCE_ID</b>: the resourceId of the audit application
      */
-    public static final String LOG_TO_AUDIT_APPLICATION = PREFIX + "LOG_TO_AUDIT_APPLICATION";
+    public static final String LOG_TO_AUDIT_APPLICATION;
 
-    private AuditRiPermissions() {
+    static {
+        PREFIX = AuditRiPropertyConstants.class.getPackage().getName() + ".";
+        INIT_AUDIT_APPLICATION = PREFIX + "INIT_AUDIT_APPLICATION";
+        LOG_TO_AUDIT_APPLICATION = PREFIX + "LOG_TO_AUDIT_APPLICATION";
+    }
+
+    private AuditRiPermissionConstants() {
     }
 
 }

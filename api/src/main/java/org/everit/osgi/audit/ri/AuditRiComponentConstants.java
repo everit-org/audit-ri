@@ -17,9 +17,9 @@
 package org.everit.osgi.audit.ri;
 
 /**
- * Audit RI Component configuration properties.
+ * Audit RI Component configuration constants.
  */
-public final class AuditRiComponentProps {
+public final class AuditRiComponentConstants {
 
     public static final String INTERNAL_SERVICE_FACTORY_PID = "org.everit.osgi.audit.ri.InternalAuditComponent";
 
@@ -45,7 +45,7 @@ public final class AuditRiComponentProps {
 
     public static final String PROP_PROPERTY_MANAGER = "propertyManager.target";
 
-    private AuditRiComponentProps() {
+    private AuditRiComponentConstants() {
     }
 
 }

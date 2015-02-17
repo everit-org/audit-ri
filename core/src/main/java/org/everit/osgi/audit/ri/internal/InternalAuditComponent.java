@@ -35,13 +35,13 @@ import org.everit.osgi.audit.dto.AuditEvent;
 import org.everit.osgi.audit.dto.AuditEventType;
 import org.everit.osgi.audit.dto.EventData;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
-import org.everit.osgi.audit.ri.AuditRiComponentProps;
-import org.everit.osgi.audit.ri.AuditRiProps;
+import org.everit.osgi.audit.ri.AuditRiComponentConstants;
+import org.everit.osgi.audit.ri.AuditRiPropertyConstants;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.InternalLoggingService;
+import org.everit.osgi.audit.ri.authorization.AuditRiAuthorizationManager;
 import org.everit.osgi.audit.ri.authorization.AuditRiPermissionChecker;
-import org.everit.osgi.audit.ri.authorization.AuditRiPermissionManager;
-import org.everit.osgi.audit.ri.authorization.AuditRiPermissions;
+import org.everit.osgi.audit.ri.authorization.AuditRiPermissionConstants;
 import org.everit.osgi.audit.ri.dto.AuditApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
@@ -61,17 +61,17 @@ import com.mysema.query.sql.SQLQuery;
 import com.mysema.query.sql.dml.SQLInsertClause;
 import com.mysema.query.types.Projections;
 
-@Component(name = AuditRiComponentProps.INTERNAL_SERVICE_FACTORY_PID, metatype = true, configurationFactory = true,
+@Component(name = AuditRiComponentConstants.INTERNAL_SERVICE_FACTORY_PID, metatype = true, configurationFactory = true,
         policy = ConfigurationPolicy.REQUIRE)
 @Properties({
-        @Property(name = AuditRiComponentProps.PROP_TRASACTION_HELPER),
-        @Property(name = AuditRiComponentProps.PROP_QUERYDSL_SUPPORT),
-        @Property(name = AuditRiComponentProps.PROP_RESOURCE_SERVICE),
-        @Property(name = AuditRiComponentProps.PROP_AUDIT_APPLICATION_CACHE),
-        @Property(name = AuditRiComponentProps.PROP_AUDIT_EVENT_TYPE_CACHE),
-        @Property(name = AuditRiComponentProps.PROP_AUTHNR_PERMISSION_CHECKER),
-        @Property(name = AuditRiComponentProps.PROP_AUTHNR_QDSL_UTIL),
-        @Property(name = AuditRiComponentProps.PROP_PROPERTY_MANAGER),
+        @Property(name = AuditRiComponentConstants.PROP_TRASACTION_HELPER),
+        @Property(name = AuditRiComponentConstants.PROP_QUERYDSL_SUPPORT),
+        @Property(name = AuditRiComponentConstants.PROP_RESOURCE_SERVICE),
+        @Property(name = AuditRiComponentConstants.PROP_AUDIT_APPLICATION_CACHE),
+        @Property(name = AuditRiComponentConstants.PROP_AUDIT_EVENT_TYPE_CACHE),
+        @Property(name = AuditRiComponentConstants.PROP_AUTHNR_PERMISSION_CHECKER),
+        @Property(name = AuditRiComponentConstants.PROP_AUTHNR_QDSL_UTIL),
+        @Property(name = AuditRiComponentConstants.PROP_PROPERTY_MANAGER),
         @Property(name = "authorizationManager.target")
 })
 @Service
@@ -79,7 +79,7 @@ public class InternalAuditComponent implements
         AuditApplicationManager,
         InternalAuditEventTypeManager,
         InternalLoggingService,
-        AuditRiPermissionManager,
+        AuditRiAuthorizationManager,
         AuditRiPermissionChecker {
 
     private static class CachedEventTypeKey {
@@ -165,12 +165,12 @@ public class InternalAuditComponent implements
         transactionHelper.required(() -> {
 
             String auditApplicationTargetResourceIdString =
-                    propertyManager.getProperty(AuditRiProps.AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID);
+                    propertyManager.getProperty(AuditRiPropertyConstants.AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID);
 
             if (auditApplicationTargetResourceIdString == null) {
 
                 auditApplicationTypeTargetResourceId = resourceService.createResource();
-                propertyManager.addProperty(AuditRiProps.AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID,
+                propertyManager.addProperty(AuditRiPropertyConstants.AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID,
                         String.valueOf(auditApplicationTypeTargetResourceId));
 
             } else {
@@ -204,14 +204,15 @@ public class InternalAuditComponent implements
     @Override
     public void addPermissionToInitAuditApplication(final long authorizedResourceId) {
         authorizationManager.addPermission(
-                authorizedResourceId, auditApplicationTypeTargetResourceId, AuditRiPermissions.INIT_AUDIT_APPLICATION);
+                authorizedResourceId, auditApplicationTypeTargetResourceId,
+                AuditRiPermissionConstants.INIT_AUDIT_APPLICATION);
     }
 
     @Override
     public void addPermissionToLogToAuditApplication(final long authorizedResourceId, final String applicationName) {
         AuditApplication auditApplication = requireAuditApplication(applicationName);
         authorizationManager.addPermission(
-                authorizedResourceId, auditApplication.resourceId, AuditRiPermissions.LOG_TO_AUDIT_APPLICATION);
+                authorizedResourceId, auditApplication.resourceId, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
     }
 
     private void cacheAuditApplication(final AuditApplication auditApplication) {
@@ -232,25 +233,24 @@ public class InternalAuditComponent implements
         }
     }
 
-    @Override
-    public void checkPermissionToInitAuditApplication() {
+    private void checkPermissionToInitAuditApplication() {
         authnrPermissionChecker.checkPermission(auditApplicationTypeTargetResourceId,
-                AuditRiPermissions.INIT_AUDIT_APPLICATION);
+                AuditRiPermissionConstants.INIT_AUDIT_APPLICATION);
     }
 
-    @Override
-    public void checkPermissionToLogToAuditApplication(final String applicationName) {
+    private void checkPermissionToLogToAuditApplication(final String applicationName) {
 
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
 
         AuditApplication auditApplication = getAuditApplication(applicationName);
 
         if (auditApplication == null) {
+            // TODO throw unknown application
             throw new UnauthorizedException(authnrPermissionChecker.getAuthorizationScope(),
-                    -1, AuditRiPermissions.LOG_TO_AUDIT_APPLICATION);
+                    -1, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
         }
         authnrPermissionChecker.checkPermission(
-                auditApplication.resourceId, AuditRiPermissions.LOG_TO_AUDIT_APPLICATION);
+                auditApplication.resourceId, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
     }
 
     private AuditApplication getAuditApplication(final String applicationName) {
@@ -293,19 +293,20 @@ public class InternalAuditComponent implements
     }
 
     private String[] getNonExistentAuditEventTypeNames(final AuditApplication auditApplication,
-            final String... eventTypeNames) {
+            final String... nonCachedAuditEventTypeNames) {
 
-        List<AuditEventType> auditEventTypes = selectAuditEventTypes(auditApplication.applicationName, eventTypeNames);
+        List<AuditEventType> selectedAuditEventTypes = selectAuditEventTypes(auditApplication.applicationName,
+                nonCachedAuditEventTypeNames);
 
-        cacheAuditEventTypes(auditApplication.applicationId, auditEventTypes);
+        cacheAuditEventTypes(auditApplication.applicationId, selectedAuditEventTypes);
 
-        return getNonCachedAuditEventTypeNames(auditApplication.applicationId, eventTypeNames);
+        return getNonCachedAuditEventTypeNames(auditApplication.applicationId, nonCachedAuditEventTypeNames);
     }
 
     @Override
     public boolean hasPermissionToInitAuditApplication() {
         return authnrPermissionChecker.hasPermission(auditApplicationTypeTargetResourceId,
-                AuditRiPermissions.INIT_AUDIT_APPLICATION);
+                AuditRiPermissionConstants.INIT_AUDIT_APPLICATION);
     }
 
     @Override
@@ -316,7 +317,7 @@ public class InternalAuditComponent implements
         AuditApplication auditApplication = getAuditApplication(applicationName);
 
         return (auditApplication != null) && authnrPermissionChecker.hasPermission(
-                auditApplication.resourceId, AuditRiPermissions.LOG_TO_AUDIT_APPLICATION);
+                auditApplication.resourceId, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
     }
 
     @Override
@@ -373,7 +374,9 @@ public class InternalAuditComponent implements
 
         checkPermissionToLogToAuditApplication(applicationName);
 
-        AuditApplication auditApplication = requireAuditApplication(applicationName);
+        AuditApplication auditApplication = getAuditApplication(applicationName);
+
+        // TODO array helyett list
 
         // check cache
         String[] nonCachedAuditEventTypeNames =
@@ -393,10 +396,9 @@ public class InternalAuditComponent implements
 
         transactionHelper.required(() -> {
 
-            // lock
-                lockAuditApplication(auditApplication.applicationId);
+            lockAuditApplication(auditApplication.applicationId);
 
-                // double check cache
+            // double check cache
                 String[] nonCachedAuditEventTypeNames2 =
                         getNonCachedAuditEventTypeNames(auditApplication.applicationId, eventTypeNames);
 
@@ -551,19 +553,21 @@ public class InternalAuditComponent implements
     @Override
     public void removePermissionInitAuditApplication(final long authorizedResourceId) {
         authorizationManager.removePermission(
-                authorizedResourceId, auditApplicationTypeTargetResourceId, AuditRiPermissions.INIT_AUDIT_APPLICATION);
+                authorizedResourceId, auditApplicationTypeTargetResourceId,
+                AuditRiPermissionConstants.INIT_AUDIT_APPLICATION);
     }
 
     @Override
     public void removePermissionLogToAuditApplication(final long authorizedResourceId, final String applicationName) {
         AuditApplication auditApplication = requireAuditApplication(applicationName);
         authorizationManager.removePermission(
-                authorizedResourceId, auditApplication.resourceId, AuditRiPermissions.LOG_TO_AUDIT_APPLICATION);
+                authorizedResourceId, auditApplication.resourceId, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
     }
 
     private AuditApplication requireAuditApplication(final String applicationName) {
         return Optional
                 .ofNullable(getAuditApplication(applicationName))
+                // TODO unknonw application
                 .orElseThrow(() -> new IllegalArgumentException("application [" + applicationName + "] does not exist"));
     }
 
