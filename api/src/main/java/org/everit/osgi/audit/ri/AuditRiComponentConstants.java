@@ -25,6 +25,10 @@ public final class AuditRiComponentConstants {
 
     public static final String EMBEDDED_SERVICE_FACTORY_PID = "org.everit.osgi.audit.ri.EmbeddedAuditComponent";
 
+    public static final String EMBEDDED_DEFAULT_SERVICE_DESCRIPTION = "Default Embedded Audit Component";
+
+    public static final String INTERNAL_DEFAULT_SERVICE_DESCRIPTION = "Default Internal Audit Component";
+
     public static final String PROP_TRASACTION_HELPER = "transactionHelper.target";
 
     public static final String PROP_QUERYDSL_SUPPORT = "querydslSupport.target";
@@ -39,11 +43,19 @@ public final class AuditRiComponentConstants {
 
     public static final String PROP_AUTHNR_PERMISSION_CHECKER = "authnrPermissionChecker.target";
 
-    public static final String PROP_AUTHNR_QDSL_UTIL = "authnrQdslUtil.target";
-
-    // public static final String PROP_AUTHENTICATION_PROPAGATOR = "authenticationPropagator.target";
+    public static final String PROP_AUTHENTICATION_PROPAGATOR = "authenticationPropagator.target";
 
     public static final String PROP_PROPERTY_MANAGER = "propertyManager.target";
+
+    public static final String PROP_AUTHORIZATION_MANAGER = "authorizationManager.target";
+
+    public static final String PROP_AUDIT_APPLICATION_MANAGER = "auditApplicationManager.target";
+
+    public static final String PROP_INTERNAL_AUDIT_EVENT_TYPE_MANAGER = "internalAuditEventTypeManager.target";
+
+    public static final String PROP_INTERNAL_LOGGING_SERVICE = "internalLoggingService.target";
+
+    public static final String PROP_PERMISSION_CHECKER = "permissionChecker.target";
 
     private AuditRiComponentConstants() {
     }

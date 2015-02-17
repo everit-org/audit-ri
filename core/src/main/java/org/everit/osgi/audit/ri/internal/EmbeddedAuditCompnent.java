@@ -18,16 +18,19 @@ import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.InternalLoggingService;
 import org.everit.osgi.authentication.context.AuthenticationPropagator;
 import org.everit.osgi.authorization.PermissionChecker;
+import org.osgi.framework.Constants;
 
 @Component(name = AuditRiComponentConstants.EMBEDDED_SERVICE_FACTORY_PID, metatype = true, configurationFactory = true,
         policy = ConfigurationPolicy.REQUIRE)
 @Properties({
+        @Property(name = Constants.SERVICE_DESCRIPTION, propertyPrivate = false,
+                value = AuditRiComponentConstants.EMBEDDED_DEFAULT_SERVICE_DESCRIPTION),
         @Property(name = AuditRiComponentConstants.PROP_EMBEDDED_AUDIT_APPLICATION_NAME),
-        @Property(name = "auditApplicationManager.target"),
-        @Property(name = "internalAuditEventTypeManager.target"),
-        @Property(name = "internalLoggingService.target"),
-        @Property(name = "authenticationPropagator.target"),
-        @Property(name = "permissionChecker.target")
+        @Property(name = AuditRiComponentConstants.PROP_AUDIT_APPLICATION_MANAGER),
+        @Property(name = AuditRiComponentConstants.PROP_INTERNAL_AUDIT_EVENT_TYPE_MANAGER),
+        @Property(name = AuditRiComponentConstants.PROP_INTERNAL_LOGGING_SERVICE),
+        @Property(name = AuditRiComponentConstants.PROP_AUTHENTICATION_PROPAGATOR),
+        @Property(name = AuditRiComponentConstants.PROP_PERMISSION_CHECKER)
 })
 @Service
 public class EmbeddedAuditCompnent implements

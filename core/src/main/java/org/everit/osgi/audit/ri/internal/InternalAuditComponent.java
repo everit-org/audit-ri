@@ -36,26 +36,25 @@ import org.everit.osgi.audit.dto.AuditEventType;
 import org.everit.osgi.audit.dto.EventData;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
 import org.everit.osgi.audit.ri.AuditRiComponentConstants;
-import org.everit.osgi.audit.ri.AuditRiPropertyConstants;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.InternalLoggingService;
 import org.everit.osgi.audit.ri.authorization.AuditRiAuthorizationManager;
 import org.everit.osgi.audit.ri.authorization.AuditRiPermissionChecker;
 import org.everit.osgi.audit.ri.authorization.AuditRiPermissionConstants;
 import org.everit.osgi.audit.ri.dto.AuditApplication;
+import org.everit.osgi.audit.ri.props.AuditRiPropertyConstants;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventData;
 import org.everit.osgi.audit.ri.schema.qdsl.QEventType;
 import org.everit.osgi.authnr.permissionchecker.AuthnrPermissionChecker;
-import org.everit.osgi.authnr.permissionchecker.UnauthorizedException;
-import org.everit.osgi.authnr.qdsl.util.AuthnrQdslUtil;
 import org.everit.osgi.authorization.AuthorizationManager;
 import org.everit.osgi.props.PropertyManager;
 import org.everit.osgi.querydsl.support.QuerydslSupport;
 import org.everit.osgi.resource.ResourceService;
 import org.everit.osgi.resource.ri.schema.qdsl.QResource;
 import org.everit.osgi.transaction.helper.api.TransactionHelper;
+import org.osgi.framework.Constants;
 
 import com.mysema.query.sql.SQLQuery;
 import com.mysema.query.sql.dml.SQLInsertClause;
@@ -64,15 +63,16 @@ import com.mysema.query.types.Projections;
 @Component(name = AuditRiComponentConstants.INTERNAL_SERVICE_FACTORY_PID, metatype = true, configurationFactory = true,
         policy = ConfigurationPolicy.REQUIRE)
 @Properties({
+        @Property(name = Constants.SERVICE_DESCRIPTION, propertyPrivate = false,
+                value = AuditRiComponentConstants.INTERNAL_DEFAULT_SERVICE_DESCRIPTION),
         @Property(name = AuditRiComponentConstants.PROP_TRASACTION_HELPER),
         @Property(name = AuditRiComponentConstants.PROP_QUERYDSL_SUPPORT),
         @Property(name = AuditRiComponentConstants.PROP_RESOURCE_SERVICE),
         @Property(name = AuditRiComponentConstants.PROP_AUDIT_APPLICATION_CACHE),
         @Property(name = AuditRiComponentConstants.PROP_AUDIT_EVENT_TYPE_CACHE),
         @Property(name = AuditRiComponentConstants.PROP_AUTHNR_PERMISSION_CHECKER),
-        @Property(name = AuditRiComponentConstants.PROP_AUTHNR_QDSL_UTIL),
         @Property(name = AuditRiComponentConstants.PROP_PROPERTY_MANAGER),
-        @Property(name = "authorizationManager.target")
+        @Property(name = AuditRiComponentConstants.PROP_AUTHORIZATION_MANAGER)
 })
 @Service
 public class InternalAuditComponent implements
@@ -147,9 +147,6 @@ public class InternalAuditComponent implements
 
     @Reference(bind = "setAuthnrPermissionChecker")
     private AuthnrPermissionChecker authnrPermissionChecker;
-
-    @Reference(bind = "setAuthnrQdslUtil")
-    private AuthnrQdslUtil authnrQdslUtil;
 
     @Reference(bind = "setPropertyManager")
     private PropertyManager propertyManager;
@@ -242,13 +239,8 @@ public class InternalAuditComponent implements
 
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
 
-        AuditApplication auditApplication = getAuditApplication(applicationName);
+        AuditApplication auditApplication = requireAuditApplication(applicationName);
 
-        if (auditApplication == null) {
-            // TODO throw unknown application
-            throw new UnauthorizedException(authnrPermissionChecker.getAuthorizationScope(),
-                    -1, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
-        }
         authnrPermissionChecker.checkPermission(
                 auditApplication.resourceId, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
     }
@@ -274,7 +266,7 @@ public class InternalAuditComponent implements
         return auditApplicationTypeTargetResourceId;
     }
 
-    private String[] getNonCachedAuditEventTypeNames(final long applicationId, final String... eventTypeNames) {
+    private List<String> getNonCachedAuditEventTypeNames(final long applicationId, final List<String> eventTypeNames) {
 
         List<String> rval = new ArrayList<>();
 
@@ -289,11 +281,29 @@ public class InternalAuditComponent implements
 
         }
 
-        return rval.toArray(new String[rval.size()]);
+        return rval;
     }
 
-    private String[] getNonExistentAuditEventTypeNames(final AuditApplication auditApplication,
-            final String... nonCachedAuditEventTypeNames) {
+    private List<String> getNonCachedAuditEventTypeNames(final long applicationId, final String... eventTypeNames) {
+
+        List<String> rval = new ArrayList<>();
+
+        for (String eventTypeName : eventTypeNames) {
+
+            AuditEventType cachedAuditEventType = auditEventTypeCache.get(
+                    new CachedEventTypeKey(applicationId, eventTypeName));
+
+            if (cachedAuditEventType == null) {
+                rval.add(eventTypeName);
+            }
+
+        }
+
+        return rval;
+    }
+
+    private List<String> getNonExistentAuditEventTypeNames(final AuditApplication auditApplication,
+            final List<String> nonCachedAuditEventTypeNames) {
 
         List<AuditEventType> selectedAuditEventTypes = selectAuditEventTypes(auditApplication.applicationName,
                 nonCachedAuditEventTypeNames);
@@ -376,21 +386,19 @@ public class InternalAuditComponent implements
 
         AuditApplication auditApplication = getAuditApplication(applicationName);
 
-        // TODO array helyett list
-
         // check cache
-        String[] nonCachedAuditEventTypeNames =
+        List<String> nonCachedAuditEventTypeNames =
                 getNonCachedAuditEventTypeNames(auditApplication.applicationId, eventTypeNames);
 
-        if (nonCachedAuditEventTypeNames.length == 0) {
+        if (nonCachedAuditEventTypeNames.isEmpty()) {
             return;
         }
 
         // select db and cache existent values
-        String[] nonExistentEventTypeNames =
+        List<String> nonExistentEventTypeNames =
                 getNonExistentAuditEventTypeNames(auditApplication, nonCachedAuditEventTypeNames);
 
-        if (nonExistentEventTypeNames.length == 0) {
+        if (nonExistentEventTypeNames.isEmpty()) {
             return;
         }
 
@@ -399,18 +407,18 @@ public class InternalAuditComponent implements
             lockAuditApplication(auditApplication.applicationId);
 
             // double check cache
-                String[] nonCachedAuditEventTypeNames2 =
+                List<String> nonCachedAuditEventTypeNames2 =
                         getNonCachedAuditEventTypeNames(auditApplication.applicationId, eventTypeNames);
 
-                if (nonCachedAuditEventTypeNames2.length == 0) {
+                if (nonCachedAuditEventTypeNames2.isEmpty()) {
                     return null;
                 }
 
                 // select db again and cache existent values
-                String[] nonExistentEventTypeNames2 =
+                List<String> nonExistentEventTypeNames2 =
                         getNonExistentAuditEventTypeNames(auditApplication, nonCachedAuditEventTypeNames2);
 
-                if (nonExistentEventTypeNames2.length == 0) {
+                if (nonExistentEventTypeNames2.isEmpty()) {
                     return null;
                 }
 
@@ -423,7 +431,8 @@ public class InternalAuditComponent implements
     /**
      * Note: transaction must be provided to this method.
      */
-    private Void insertAndCacheAuditEventTypes(final AuditApplication auditApplication, final String... eventTypeNames) {
+    private Void insertAndCacheAuditEventTypes(final AuditApplication auditApplication,
+            final List<String> eventTypeNames) {
         return querydslSupport.execute((connection, configuration) -> {
 
             for (String eventTypeName : eventTypeNames) {
@@ -567,7 +576,6 @@ public class InternalAuditComponent implements
     private AuditApplication requireAuditApplication(final String applicationName) {
         return Optional
                 .ofNullable(getAuditApplication(applicationName))
-                // TODO unknonw application
                 .orElseThrow(() -> new IllegalArgumentException("application [" + applicationName + "] does not exist"));
     }
 
@@ -586,7 +594,7 @@ public class InternalAuditComponent implements
         });
     }
 
-    private List<AuditEventType> selectAuditEventTypes(final String applicationName, final String... eventTypeNames) {
+    private List<AuditEventType> selectAuditEventTypes(final String applicationName, final List<String> eventTypeNames) {
         return querydslSupport.execute((connection, configuration) -> {
 
             QEventType qEventType = QEventType.eventType;
@@ -614,10 +622,6 @@ public class InternalAuditComponent implements
 
     public void setAuthnrPermissionChecker(final AuthnrPermissionChecker authnrPermissionChecker) {
         this.authnrPermissionChecker = authnrPermissionChecker;
-    }
-
-    public void setAuthnrQdslUtil(final AuthnrQdslUtil authnrQdslUtil) {
-        this.authnrQdslUtil = authnrQdslUtil;
     }
 
     public void setAuthorizationManager(final AuthorizationManager authorizationManager) {

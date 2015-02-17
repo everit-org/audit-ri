@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Audit RI API.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.audit.ri;
+package org.everit.osgi.audit.ri.props;
 
 import org.everit.osgi.audit.ri.authorization.AuditRiPermissionConstants;
 
@@ -23,16 +23,16 @@ import org.everit.osgi.audit.ri.authorization.AuditRiPermissionConstants;
  */
 public final class AuditRiPropertyConstants {
 
-    // TODO static block + package
-
-    private static final String PREFIX = "org.everit.osgi.audit.ri.props.";
-
     /**
      * Property key to identify the target resourceId used by the
      * {@link AuditRiPermissionConstants#CREATE_AUDIT_APPLICATION}.
      */
-    public static final String AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID =
-            PREFIX + "AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID";
+    public static final String AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID;
+
+    static {
+        String prefix = AuditRiPropertyConstants.class.getPackage().getName() + ".";
+        AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID = prefix + "AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID";
+    }
 
     private AuditRiPropertyConstants() {
     }

@@ -149,11 +149,6 @@
     </dependency>
     <dependency>
       <groupId>org.everit.osgi</groupId>
-      <artifactId>org.everit.osgi.authnr.qdsl.util.api</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.everit.osgi</groupId>
       <artifactId>org.everit.osgi.authorization.api</artifactId>
       <version>1.0.0</version>
     </dependency>
