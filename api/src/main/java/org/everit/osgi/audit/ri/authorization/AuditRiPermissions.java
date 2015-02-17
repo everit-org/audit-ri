@@ -14,7 +14,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - Audit RI API.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.audit.ri;
+package org.everit.osgi.audit.ri.authorization;
+
+import org.everit.osgi.audit.ri.AuditRiProps;
 
 /**
  * Permission actions used by the implementation.
@@ -24,35 +26,14 @@ public final class AuditRiPermissions {
     private static final String PREFIX = "org.everit.osgi.audit.ri.permission.";
 
     /**
-     * Permission to read an audit application and all of its audit event types. <br>
-     * <br>
-     * <b>TARGET_RESOURCE_ID</b>: the resourceId of the audit application
-     */
-    public static final String READ_AUDIT_APPLICATION = PREFIX + "READ_AUDIT_APPLICATION";
-
-    /**
      * Permission to create audit applications. <br>
      * <br>
      * <b>TARGET_RESOURCE_ID</b>: the resourceId returned by the
-     * {@link AuditApplicationManager#getAuditApplicationTypeTargetResourceId()} method, it is stored as a property in
+     * {@link AuditRiPermissionChecker#getAuditApplicationTypeTargetResourceId()} method, it is stored as a property in
      * the {@link org.everit.osgi.props.PropertyManager} with key
      * {@link AuditRiProps#AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID}.
      */
-    public static final String CREATE_AUDIT_APPLICATION = PREFIX + "CREATE_AUDIT_APPLICATION";
-
-    /**
-     * Permission to read an audit event type. <br>
-     * <br>
-     * <b>TARGET_RESOURCE_ID</b>: the resourceId of the audit event type
-     */
-    public static final String READ_AUDIT_EVENT_TYPE = PREFIX + "READ_AUDIT_EVENT_TYPE";
-
-    /**
-     * Permission to create audit event type for an audit application. <br>
-     * <br>
-     * <b>TARGET_RESOURCE_ID</b>: the resourceId of the audit application
-     */
-    public static final String CREATE_AUDIT_EVENT_TYPE = PREFIX + "CREATE_AUDIT_EVENT_TYPE";
+    public static final String INIT_AUDIT_APPLICATION = PREFIX + "INIT_AUDIT_APPLICATION";
 
     /**
      * Permission to log any kind of audit event type to an audit application. <br>
@@ -60,13 +41,6 @@ public final class AuditRiPermissions {
      * <b>TARGET_RESOURCE_ID</b>: the resourceId of the audit application
      */
     public static final String LOG_TO_AUDIT_APPLICATION = PREFIX + "LOG_TO_AUDIT_APPLICATION";
-
-    /**
-     * Permission to log a specific audit event type. <br>
-     * <br>
-     * <b>TARGET_RESOURCE_ID</b>: the resourceId of the audit event type
-     */
-    public static final String LOG_TO_EVENT_TYPE = PREFIX + "LOG_TO_EVENT_TYPE";
 
     private AuditRiPermissions() {
     }

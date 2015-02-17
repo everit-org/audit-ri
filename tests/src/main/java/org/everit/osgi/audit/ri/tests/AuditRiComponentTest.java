@@ -37,9 +37,9 @@ import org.everit.osgi.audit.dto.EventData;
 import org.everit.osgi.audit.dto.EventData.Builder;
 import org.everit.osgi.audit.dto.EventDataType;
 import org.everit.osgi.audit.ri.AuditApplicationManager;
-import org.everit.osgi.audit.ri.AuditRiPermissions;
 import org.everit.osgi.audit.ri.AuditRiComponentProps;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
+import org.everit.osgi.audit.ri.authorization.AuditRiPermissions;
 import org.everit.osgi.audit.ri.dto.AuditApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QApplication;
 import org.everit.osgi.audit.ri.schema.qdsl.QEvent;
@@ -140,7 +140,7 @@ public class AuditRiComponentTest {
     @Reference(bind = "setAuthorizationManager")
     private AuthorizationManager authorizationManager;
 
-    private String testAuditApplicationName;
+    private String embeddedAuditApplicationName;
 
     private long testAuditApplicationResourceId;
 
@@ -152,7 +152,7 @@ public class AuditRiComponentTest {
         systemResourceId = permissionChecker.getSystemResourceId();
 
         AuditApplication testAuditApplication = authenticationPropagator.runAs(systemResourceId, () -> {
-            return auditApplicationManager.getOrCreateApplication(testAuditApplicationName);
+            return auditApplicationManager.getOrCreateApplication(embeddedAuditApplicationName);
         });
         testAuditApplicationResourceId = testAuditApplication.resourceId;
 
@@ -286,7 +286,8 @@ public class AuditRiComponentTest {
     public void setAuditApplicationManager(final AuditApplicationManager auditApplicationManager,
             final Map<String, Object> serviceProperties) {
         this.auditApplicationManager = auditApplicationManager;
-        testAuditApplicationName = String.valueOf(serviceProperties.get(AuditRiComponentProps.PROP_AUDIT_APPLICATION_NAME));
+        embeddedAuditApplicationName = String.valueOf(
+                serviceProperties.get(AuditRiComponentProps.PROP_EMBEDDED_AUDIT_APPLICATION_NAME));
     }
 
     public void setAuditEventTypeCache(final Map<?, ?> auditEventTypeCache) {

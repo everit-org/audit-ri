@@ -16,6 +16,8 @@
  */
 package org.everit.osgi.audit.ri;
 
+import org.everit.osgi.audit.ri.authorization.AuditRiPermissions;
+
 /**
  * Property keys used by the Audit RI.
  */

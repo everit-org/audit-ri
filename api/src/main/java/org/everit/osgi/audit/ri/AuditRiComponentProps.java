@@ -21,7 +21,9 @@ package org.everit.osgi.audit.ri;
  */
 public final class AuditRiComponentProps {
 
-    public static final String SERVICE_FACTORY_PID = "org.everit.osgi.audit.ri.AuditComponent";
+    public static final String INTERNAL_SERVICE_FACTORY_PID = "org.everit.osgi.audit.ri.InternalAuditComponent";
+
+    public static final String EMBEDDED_SERVICE_FACTORY_PID = "org.everit.osgi.audit.ri.EmbeddedAuditComponent";
 
     public static final String PROP_TRASACTION_HELPER = "transactionHelper.target";
 
@@ -29,7 +31,7 @@ public final class AuditRiComponentProps {
 
     public static final String PROP_RESOURCE_SERVICE = "resourceService.target";
 
-    public static final String PROP_AUDIT_APPLICATION_NAME = "auditApplicationName";
+    public static final String PROP_EMBEDDED_AUDIT_APPLICATION_NAME = "embeddedAuditApplicationName";
 
     public static final String PROP_AUDIT_APPLICATION_CACHE = "auditApplicationCache.target";
 
@@ -39,7 +41,7 @@ public final class AuditRiComponentProps {
 
     public static final String PROP_AUTHNR_QDSL_UTIL = "authnrQdslUtil.target";
 
-    public static final String PROP_AUTHENTICATION_PROPAGATOR = "authenticationPropagator.target";
+    // public static final String PROP_AUTHENTICATION_PROPAGATOR = "authenticationPropagator.target";
 
     public static final String PROP_PROPERTY_MANAGER = "propertyManager.target";
 
