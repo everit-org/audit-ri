@@ -69,8 +69,10 @@ import com.mysema.query.types.Projections;
         @Property(name = AuditRiComponentConstants.PROP_TRASACTION_HELPER),
         @Property(name = AuditRiComponentConstants.PROP_QUERYDSL_SUPPORT),
         @Property(name = AuditRiComponentConstants.PROP_RESOURCE_SERVICE),
-        @Property(name = AuditRiComponentConstants.PROP_AUDIT_APPLICATION_CACHE),
-        @Property(name = AuditRiComponentConstants.PROP_AUDIT_EVENT_TYPE_CACHE),
+        @Property(name = AuditRiComponentConstants.PROP_AUDIT_APPLICATION_CACHE,
+                value = AuditRiComponentConstants.DEFAULT_CACHE_TARGET),
+        @Property(name = AuditRiComponentConstants.PROP_AUDIT_EVENT_TYPE_CACHE,
+                value = AuditRiComponentConstants.DEFAULT_CACHE_TARGET),
         @Property(name = AuditRiComponentConstants.PROP_AUTHNR_PERMISSION_CHECKER),
         @Property(name = AuditRiComponentConstants.PROP_PROPERTY_MANAGER),
         @Property(name = AuditRiComponentConstants.PROP_AUTHORIZATION_MANAGER)
@@ -613,10 +615,10 @@ public class InternalAuditComponent implements
             List<AuditEventType> rval = new ArrayList<>();
             int numberOfEventTypeNames = eventTypeNames.size();
 
-            for (int i = 0; i < numberOfEventTypeNames; i = i + SELECT_AUDIT_EVENT_TYPES_PAGE_SIZE) {
+            for (int fromIndex = 0; fromIndex < numberOfEventTypeNames; fromIndex = fromIndex
+                    + SELECT_AUDIT_EVENT_TYPES_PAGE_SIZE) {
 
-                int fromIndex = i;
-                int toIndex = i + SELECT_AUDIT_EVENT_TYPES_PAGE_SIZE;
+                int toIndex = fromIndex + SELECT_AUDIT_EVENT_TYPES_PAGE_SIZE;
                 if (toIndex > numberOfEventTypeNames) {
                     toIndex = numberOfEventTypeNames;
                 }

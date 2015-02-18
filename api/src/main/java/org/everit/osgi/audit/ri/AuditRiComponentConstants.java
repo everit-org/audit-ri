@@ -57,6 +57,8 @@ public final class AuditRiComponentConstants {
 
     public static final String PROP_PERMISSION_CHECKER = "permissionChecker.target";
 
+    public static final String DEFAULT_CACHE_TARGET = "(MUST_BE_SET=TO_SOMETHING)";
+
     private AuditRiComponentConstants() {
     }
 
