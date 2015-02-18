@@ -157,6 +157,8 @@ public class InternalAuditComponent implements
 
     private long auditApplicationTypeTargetResourceId;
 
+    private static final int SELECT_AUDIT_EVENT_TYPES_PAGE_SIZE = 50;
+
     @Activate
     public void activate(final Map<String, Object> componentProperties) {
 
@@ -234,12 +236,9 @@ public class InternalAuditComponent implements
                 AuditRiPermissionConstants.INIT_AUDIT_APPLICATION);
     }
 
-    private void checkPermissionToLogToAuditApplication(final String applicationName) {
-
-        AuditApplication auditApplication = requireAuditApplication(applicationName);
-
+    private void checkPermissionToLogToAuditApplication(final long auditApplicationResourceId) {
         authnrPermissionChecker.checkPermission(
-                auditApplication.resourceId, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
+                auditApplicationResourceId, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
     }
 
     private AuditApplication getAuditApplication(final String applicationName) {
@@ -381,9 +380,9 @@ public class InternalAuditComponent implements
             return;
         }
 
-        checkPermissionToLogToAuditApplication(applicationName);
+        AuditApplication auditApplication = requireAuditApplication(applicationName);
 
-        AuditApplication auditApplication = getAuditApplication(applicationName);
+        checkPermissionToLogToAuditApplication(auditApplication.resourceId);
 
         // check cache
         List<String> nonCachedAuditEventTypeNames =
@@ -481,13 +480,13 @@ public class InternalAuditComponent implements
                     .resourceId(resourceId)
                     .build();
         });
-
     }
 
     /**
      * Note: transaction must be provided to this method.
      */
     private void insertAuditEvent(final long eventTypeId, final AuditEvent auditEvent) {
+
         querydslSupport.execute((connection, configuration) -> {
 
             QEvent qEvent = QEvent.event;
@@ -501,11 +500,13 @@ public class InternalAuditComponent implements
             for (EventData eventData : auditEvent.eventDataArray) {
 
                 QEventData qEventData = QEventData.eventData;
+
                 SQLInsertClause insert = new SQLInsertClause(connection, configuration, qEventData)
                         .set(qEventData.eventId, eventId)
                         .set(qEventData.eventDataName, eventData.eventDataName)
                         .set(qEventData.eventDataType, eventData.eventDataType.toString());
                 addEventDataValue(insert, qEventData, eventData);
+
                 insert.execute();
             }
 
@@ -547,7 +548,7 @@ public class InternalAuditComponent implements
 
         AuditApplication auditApplication = requireAuditApplication(applicationName);
 
-        checkPermissionToLogToAuditApplication(applicationName);
+        checkPermissionToLogToAuditApplication(auditApplication.resourceId);
 
         transactionHelper.required(() -> {
 
@@ -603,20 +604,38 @@ public class InternalAuditComponent implements
     }
 
     private List<AuditEventType> selectAuditEventTypes(final String applicationName, final List<String> eventTypeNames) {
+
         return querydslSupport.execute((connection, configuration) -> {
 
             QEventType qEventType = QEventType.eventType;
             QApplication qApplication = QApplication.application;
 
-            return new SQLQuery(connection, configuration)
-                    .from(qEventType)
-                    .innerJoin(qApplication).on(qEventType.applicationId.eq(qApplication.applicationId))
-                    .where(qApplication.applicationName.eq(applicationName)
-                            .and(qEventType.eventTypeName.in(eventTypeNames)))
-                    .list(Projections.fields(AuditEventType.class,
-                            qEventType.eventTypeId,
-                            qEventType.eventTypeName,
-                            qEventType.resourceId));
+            List<AuditEventType> rval = new ArrayList<>();
+            int numberOfEventTypeNames = eventTypeNames.size();
+
+            for (int i = 0; i < numberOfEventTypeNames; i = i + SELECT_AUDIT_EVENT_TYPES_PAGE_SIZE) {
+
+                int fromIndex = i;
+                int toIndex = i + SELECT_AUDIT_EVENT_TYPES_PAGE_SIZE;
+                if (toIndex > numberOfEventTypeNames) {
+                    toIndex = numberOfEventTypeNames;
+                }
+
+                List<String> actualEventTypeNames = new ArrayList<>(eventTypeNames.subList(fromIndex, toIndex));
+
+                List<AuditEventType> auditEventTypes = new SQLQuery(connection, configuration)
+                        .from(qEventType)
+                        .innerJoin(qApplication).on(qEventType.applicationId.eq(qApplication.applicationId))
+                        .where(qApplication.applicationName.eq(applicationName)
+                                .and(qEventType.eventTypeName.in(actualEventTypeNames)))
+                        .list(Projections.fields(AuditEventType.class,
+                                qEventType.eventTypeId,
+                                qEventType.eventTypeName,
+                                qEventType.resourceId));
+                rval.addAll(auditEventTypes);
+            }
+
+            return rval;
         });
     }
 

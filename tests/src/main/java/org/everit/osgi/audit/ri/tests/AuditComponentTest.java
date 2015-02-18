@@ -55,7 +55,6 @@ import org.everit.osgi.authnr.permissionchecker.UnauthorizedException;
 import org.everit.osgi.authorization.PermissionChecker;
 import org.everit.osgi.authorization.ri.schema.qdsl.QPermission;
 import org.everit.osgi.authorization.ri.schema.qdsl.QPermissionInheritance;
-import org.everit.osgi.dev.testrunner.TestDuringDevelopment;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.props.PropertyManager;
 import org.everit.osgi.props.ri.schema.qdsl.QProperty;
@@ -97,7 +96,6 @@ import com.mysema.query.sql.dml.SQLDeleteClause;
         @Property(name = "propertyManager.target")
 })
 @Service(AuditComponentTest.class)
-@TestDuringDevelopment
 public class AuditComponentTest {
 
     private static final Instant TIMESTAMP_V = Instant.now();
@@ -567,15 +565,16 @@ public class AuditComponentTest {
     @Test
     public void testInitAuditEventTypesStress() {
 
-        int count = 100000;
+        int count = 10000;
         String[] eventTypeNames = new String[count];
         for (int i = 0; i < count; i++) {
-            eventTypeNames[i] = UUID.randomUUID().toString();
+            eventTypeNames[i] = "e" + i;
         }
 
         logService.log(LogService.LOG_INFO, ">>> init " + count + " event types in one transaction started");
 
         long startAt = Instant.now().getEpochSecond();
+
         auditEventTypeManager.initAuditEventTypes(eventTypeNames);
 
         long duration = Instant.now().getEpochSecond() - startAt;
@@ -812,7 +811,7 @@ public class AuditComponentTest {
     public void testLogEventStress() {
 
         int eventTypeCount = 100;
-        int eventsPerEventType = 1000;
+        int eventsPerEventType = 100;
 
         String[] eventTypeNames = new String[eventTypeCount];
         List<AuditEvent> auditEvents = new ArrayList<>();
@@ -829,7 +828,8 @@ public class AuditComponentTest {
         auditEventTypeManager.initAuditEventTypes(eventTypeNames);
 
         int count = eventTypeCount * eventsPerEventType;
-        logService.log(LogService.LOG_INFO, ">>> log " + count + " events with 4 event data started");
+
+        logService.log(LogService.LOG_INFO, ">>> log " + count + " events (containing 4 event data) started");
 
         long startAt = Instant.now().getEpochSecond();
 
@@ -840,5 +840,4 @@ public class AuditComponentTest {
         long duration = Instant.now().getEpochSecond() - startAt;
         logService.log(LogService.LOG_INFO, ">>> " + count + " events logged in " + duration + " seconds");
     }
-
 }
