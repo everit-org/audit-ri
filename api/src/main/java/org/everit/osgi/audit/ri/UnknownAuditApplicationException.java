@@ -16,6 +16,9 @@
  */
 package org.everit.osgi.audit.ri;
 
+/**
+ * Signs that a method was invoked with an application that does not exist.
+ */
 public class UnknownAuditApplicationException extends RuntimeException {
 
     /**
@@ -23,8 +26,17 @@ public class UnknownAuditApplicationException extends RuntimeException {
      */
     private static final long serialVersionUID = 6784626196905796600L;
 
+    /**
+     * The name of the application that does not exist.
+     */
     private final String applicationName;
 
+    /**
+     * Constructor.
+     *
+     * @param applicationName
+     *            the name of the application that does not exist
+     */
     public UnknownAuditApplicationException(final String applicationName) {
         super("audit application [" + applicationName + "] does not exist");
         this.applicationName = applicationName;

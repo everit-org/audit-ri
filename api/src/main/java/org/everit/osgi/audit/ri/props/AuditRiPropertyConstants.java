@@ -24,8 +24,8 @@ import org.everit.osgi.audit.ri.authorization.AuditRiPermissionConstants;
 public final class AuditRiPropertyConstants {
 
     /**
-     * Property key to identify the target resourceId used by the
-     * {@link AuditRiPermissionConstants#CREATE_AUDIT_APPLICATION}.
+     * Property key to identify the target resourceId used for the
+     * {@link AuditRiPermissionConstants#INIT_AUDIT_APPLICATION} permission action.
      */
     public static final String AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID;
 

@@ -16,14 +16,55 @@
  */
 package org.everit.osgi.audit.ri.authorization;
 
+/**
+ * This interface helps to manage permissions used by the Audit RI module.
+ */
 public interface AuditRiAuthorizationManager {
 
+    /**
+     * Adds the {@link AuditRiPermissionConstants#INIT_AUDIT_APPLICATION} permission action to the given authorized
+     * resourceId.
+     *
+     * @param authorizedResourceId
+     *            the permission will be added to this resourceId
+     */
     void addPermissionToInitAuditApplication(long authorizedResourceId);
 
+    /**
+     * Adds the {@link AuditRiPermissionConstants#LOG_TO_AUDIT_APPLICATION} permission action to the given authorized
+     * resourceId.
+     *
+     * @param authorizedResourceId
+     *            the permission will be added to this resourceId
+     * @param applicationName
+     *            the authorized resourceId can log events and initialize event types under this audit application,
+     *            cannot be <code>null</code>
+     * @throws NullPointerException
+     *             if the <code>applicationName</code> is <code>null</code>
+     */
     void addPermissionToLogToAuditApplication(long authorizedResourceId, String applicationName);
 
+    /**
+     * Removes the {@link AuditRiPermissionConstants#INIT_AUDIT_APPLICATION} permission action from the given authorized
+     * resourceId.
+     *
+     * @param authorizedResourceId
+     *            the permission will be removed from this resourceId
+     */
     void removePermissionInitAuditApplication(long authorizedResourceId);
 
+    /**
+     * Removes the {@link AuditRiPermissionConstants#LOG_TO_AUDIT_APPLICATION} permission action from the given
+     * authorized resourceId.
+     *
+     * @param authorizedResourceId
+     *            the permission will be removed from this resourceId
+     * @param applicationName
+     *            the authorized resourceId cannot log events or initialize event types under this audit application any
+     *            more, cannot be <code>null</code>
+     * @throws NullPointerException
+     *             if the <code>applicationName</code> is <code>null</code>
+     */
     void removePermissionLogToAuditApplication(long authorizedResourceId, String applicationName);
 
 }

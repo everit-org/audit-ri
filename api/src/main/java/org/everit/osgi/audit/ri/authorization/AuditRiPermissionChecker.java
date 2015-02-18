@@ -16,18 +16,33 @@
  */
 package org.everit.osgi.audit.ri.authorization;
 
+/**
+ * This interface helps to check permissions used by the Audit RI module.
+ */
 public interface AuditRiPermissionChecker {
 
     /**
      * Returns the resourceId used for authorization and permission checking in case of
-     * {@link AuditRiPermissionConstants#CREATE_AUDIT_APPLICATION}.
+     * {@link AuditRiPermissionConstants#INIT_AUDIT_APPLICATION}.
      *
      * @return the resourceId of the audit application type
      */
     long getAuditApplicationTypeTargetResourceId();
 
+    /**
+     * Checks if the authenticated resource has a permission for the
+     * {@link AuditRiPermissionConstants#INIT_AUDIT_APPLICATION} permission action.
+     *
+     * @return <code>true</code> if the permission is allowed, <code>false</code> otherwise
+     */
     boolean hasPermissionToInitAuditApplication();
 
+    /**
+     * Checks if the authenticated resource has a permission for the
+     * {@link AuditRiPermissionConstants#LOG_TO_AUDIT_APPLICATION} permission action.
+     *
+     * @return <code>true</code> if the permission is allowed, <code>false</code> otherwise
+     */
     boolean hasPermissionToLogToAuditApplication(String applicationName);
 
 }
