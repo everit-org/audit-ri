@@ -26,7 +26,7 @@ public final class AuditRiPermissionConstants {
      * <br>
      * <b>TARGET_RESOURCE_ID</b>: the resourceId returned by the
      * {@link AuditRiPermissionChecker#getAuditApplicationTypeTargetResourceId()} method, it is stored as a property in
-     * the {@link org.everit.osgi.props.PropertyManager} with key
+     * the a <code>PropertyManager</code> with key
      * {@link org.everit.osgi.audit.ri.props.AuditRiPropertyConstants#AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID}.
      */
     public static final String INIT_AUDIT_APPLICATION;

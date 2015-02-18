@@ -16,8 +16,6 @@
  */
 package org.everit.osgi.audit.ri.authorization;
 
-import org.everit.osgi.audit.ri.UnknownAuditApplicationException;
-
 /**
  * This interface helps to manage permissions used by the Audit RI module.
  */
@@ -43,7 +41,7 @@ public interface AuditRiAuthorizationManager {
      *            cannot be <code>null</code>
      * @throws NullPointerException
      *             if the <code>applicationName</code> is <code>null</code>
-     * @throws UnknownAuditApplicationException
+     * @throws org.everit.osgi.audit.ri.UnknownAuditApplicationException
      *             if the given application not exists
      */
     void addPermissionToLogToAuditApplication(long authorizedResourceId, String applicationName);
@@ -68,7 +66,7 @@ public interface AuditRiAuthorizationManager {
      *            more, cannot be <code>null</code>
      * @throws NullPointerException
      *             if the <code>applicationName</code> is <code>null</code>
-     * @throws UnknownAuditApplicationException
+     * @throws org.everit.osgi.audit.ri.UnknownAuditApplicationException
      *             if the given application not exists
      */
     void removePermissionLogToAuditApplication(long authorizedResourceId, String applicationName);

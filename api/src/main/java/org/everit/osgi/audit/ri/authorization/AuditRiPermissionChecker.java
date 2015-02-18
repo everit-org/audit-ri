@@ -16,7 +16,6 @@
  */
 package org.everit.osgi.audit.ri.authorization;
 
-import org.everit.osgi.audit.ri.UnknownAuditApplicationException;
 
 /**
  * This interface helps to check permissions used by the Audit RI module.
@@ -43,8 +42,12 @@ public interface AuditRiPermissionChecker {
      * Checks if the authenticated resource has a permission for the
      * {@link AuditRiPermissionConstants#LOG_TO_AUDIT_APPLICATION} permission action.
      *
+     * @param applicationName
+     *            the name of the application to check, cannot be <code>null</code>
      * @return <code>true</code> if the permission is allowed, <code>false</code> otherwise
-     * @throws UnknownAuditApplicationException
+     * @throws NullPointerException
+     *             if <code>applicationName</code> is <code>null</code>
+     * @throws org.everit.osgi.audit.ri.UnknownAuditApplicationException
      *             if the given application not exists
      */
     boolean hasPermissionToLogToAuditApplication(String applicationName);

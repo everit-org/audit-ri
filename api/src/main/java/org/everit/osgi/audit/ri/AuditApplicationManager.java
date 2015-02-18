@@ -16,7 +16,6 @@
  */
 package org.everit.osgi.audit.ri;
 
-import org.everit.osgi.audit.ri.dto.AuditApplication;
 
 /**
  * Interface to manage audit applications.
@@ -29,7 +28,6 @@ public interface AuditApplicationManager {
      *
      * @param applicationName
      *            the name of the application to create, cannot be <code>null</code>
-     * @return the created {@link AuditApplication}
      * @throws NullPointerException
      *             if {@code applicationName} is <code>null</code>
      */
