@@ -33,6 +33,8 @@ public interface InternalAuditEventTypeManager {
      * @throws NullPointerException
      *             if the <code>applicationName</code>, a <code>null</code> array or an array with <code>null</code>
      *             element is provided
+     * @throws UnknownAuditApplicationException
+     *             if the given application not exists
      */
     void initAuditEventTypes(String applicationName, String... eventTypeNames);
 

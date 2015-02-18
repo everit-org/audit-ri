@@ -32,6 +32,8 @@ public interface InternalLoggingService {
      *            the event to persist, cannot be <code>null</code>
      * @throws NullPointerException
      *             if the <code>applicationName</code> or <code>auditEvent</code> parameter is <code>null</code>
+     * @throws UnknownAuditApplicationException
+     *             if the given application not exists
      */
     void logEvent(String applicationName, AuditEvent auditEvent);
 
