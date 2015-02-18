@@ -57,7 +57,8 @@
           <instructions>
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Import-Package>
-              org.everit.osgi.audit;version="[2.0,3)",
+              org.everit.osgi.audit;version="[3.0,4)",
+              org.everit.osgi.audit.dto;version="[2.0,3)",
               org.everit.osgi.audit.ri;version="[1.0,2)",
               *
             </Import-Package>

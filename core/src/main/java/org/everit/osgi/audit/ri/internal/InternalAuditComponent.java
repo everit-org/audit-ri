@@ -38,6 +38,7 @@ import org.everit.osgi.audit.ri.AuditApplicationManager;
 import org.everit.osgi.audit.ri.AuditRiComponentConstants;
 import org.everit.osgi.audit.ri.InternalAuditEventTypeManager;
 import org.everit.osgi.audit.ri.InternalLoggingService;
+import org.everit.osgi.audit.ri.UnknownAuditApplicationException;
 import org.everit.osgi.audit.ri.authorization.AuditRiAuthorizationManager;
 import org.everit.osgi.audit.ri.authorization.AuditRiPermissionChecker;
 import org.everit.osgi.audit.ri.authorization.AuditRiPermissionConstants;
@@ -223,10 +224,8 @@ public class InternalAuditComponent implements
     }
 
     private void cacheAuditEventTypes(final long applicationId, final List<AuditEventType> auditEventTypes) {
-        if ((auditEventTypes != null) && (!auditEventTypes.isEmpty())) {
-            for (AuditEventType auditEventType : auditEventTypes) {
-                cacheAuditEventType(applicationId, auditEventType);
-            }
+        for (AuditEventType auditEventType : auditEventTypes) {
+            cacheAuditEventType(applicationId, auditEventType);
         }
     }
 
@@ -236,8 +235,6 @@ public class InternalAuditComponent implements
     }
 
     private void checkPermissionToLogToAuditApplication(final String applicationName) {
-
-        Objects.requireNonNull(applicationName, "applicationName cannot be null");
 
         AuditApplication auditApplication = requireAuditApplication(applicationName);
 
@@ -324,9 +321,9 @@ public class InternalAuditComponent implements
 
         Objects.requireNonNull(applicationName, "applicationName cannot be null");
 
-        AuditApplication auditApplication = getAuditApplication(applicationName);
+        AuditApplication auditApplication = requireAuditApplication(applicationName);
 
-        return (auditApplication != null) && authnrPermissionChecker.hasPermission(
+        return authnrPermissionChecker.hasPermission(
                 auditApplication.resourceId, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
     }
 
@@ -376,7 +373,9 @@ public class InternalAuditComponent implements
     @Override
     public void initAuditEventTypes(final String applicationName, final String... eventTypeNames) {
 
+        Objects.requireNonNull(applicationName, "applicationName cannot be null");
         Objects.requireNonNull(eventTypeNames, "eventTypeNames cannot be null");
+        requireNotContainsNull(eventTypeNames);
 
         if (eventTypeNames.length == 0) {
             return;
@@ -543,6 +542,7 @@ public class InternalAuditComponent implements
     @Override
     public void logEvent(final String applicationName, final AuditEvent auditEvent) {
 
+        Objects.requireNonNull(applicationName, "applicationName cannot be null");
         Objects.requireNonNull(auditEvent, "auditEvent cannot be null");
 
         AuditApplication auditApplication = requireAuditApplication(applicationName);
@@ -576,7 +576,15 @@ public class InternalAuditComponent implements
     private AuditApplication requireAuditApplication(final String applicationName) {
         return Optional
                 .ofNullable(getAuditApplication(applicationName))
-                .orElseThrow(() -> new IllegalArgumentException("application [" + applicationName + "] does not exist"));
+                .orElseThrow(() -> new UnknownAuditApplicationException(applicationName));
+    }
+
+    private void requireNotContainsNull(final String... eventTypeNames) {
+        for (String eventTypeName : eventTypeNames) {
+            if (eventTypeName == null) {
+                throw new NullPointerException("eventTypeNames cannot contain null value");
+            }
+        }
     }
 
     private AuditApplication selectAuditApplication(final String applicationName) {

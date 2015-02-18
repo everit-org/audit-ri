@@ -66,7 +66,7 @@
             <Provide-Capability>
               liquibase.schema;name=org.everit.osgi.audit.ri.tests;resource=/META-INF/liquibase/audit.ri.tests.liquibase.xml
             </Provide-Capability>
-            <EOSGi-TestNum>8</EOSGi-TestNum>
+            <EOSGi-TestNum>13</EOSGi-TestNum>
           </instructions>
         </configuration>
       </plugin>
@@ -100,6 +100,7 @@
           <jacoco>
             <includes>org.everit.osgi.audit.api.*:org.everit.osgi.audit.ri.*</includes>
             <excludes>org.everit.osgi.audit.ri.schema.*:org.everit.osgi.audit.ri.tests.*</excludes>
+            <output>$${ if (System.getenv("EOSGI_STOP_AFTER_TESTS").equals("true")) "file"; else "tcpserver"; }</output>
           </jacoco>
           <environments>
             <environment>
@@ -312,7 +313,7 @@
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
-      <version>1.4.183</version>
+      <version>1.4.185</version>
     </dependency>
 
     <dependency>

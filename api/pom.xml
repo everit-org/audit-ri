@@ -95,7 +95,9 @@
             </Import-Package>
             <Export-Package>
               org.everit.osgi.audit.ri;version=1.0.0,
-              org.everit.osgi.audit.ri.dto;version=1.0.0
+              org.everit.osgi.audit.ri.authorization;version=1.0.0,
+              org.everit.osgi.audit.ri.dto;version=1.0.0,
+              org.everit.osgi.audit.ri.props;version=1.0.0
             </Export-Package>
           </instructions>
         </configuration>
