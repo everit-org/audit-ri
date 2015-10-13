@@ -1,8 +1,8 @@
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.next
-release.properties
-.project
-.classpath
 .settings
+target
+.classpath
+.project
+.checkstyle
+.fbExcludeFilterFile
+.pmd
+.pmdruleset.xml
