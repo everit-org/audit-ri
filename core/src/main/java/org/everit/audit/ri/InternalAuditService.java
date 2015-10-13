@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.annotation.Generated;
-
 import org.everit.audit.dto.AuditEvent;
 import org.everit.audit.dto.AuditEventType;
 import org.everit.audit.dto.EventData;
@@ -58,58 +56,6 @@ public class InternalAuditService implements
     InternalLoggingService,
     AuditRiAuthorizationManager,
     AuditRiPermissionChecker {
-
-  /**
-   * The cache key of a cached event type.
-   */
-  private static class CachedEventTypeKey {
-
-    private final long applicationId;
-
-    private final String eventTypeName;
-
-    CachedEventTypeKey(final long applicationId, final String eventTypeName) {
-      this.applicationId = applicationId;
-      this.eventTypeName = eventTypeName;
-    }
-
-    @Override
-    @Generated("eclipse")
-    public boolean equals(final Object obj) {
-      if (this == obj) {
-        return true;
-      }
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      CachedEventTypeKey other = (CachedEventTypeKey) obj;
-      if (applicationId != other.applicationId) {
-        return false;
-      }
-      if (eventTypeName == null) {
-        if (other.eventTypeName != null) {
-          return false;
-        }
-      } else if (!eventTypeName.equals(other.eventTypeName)) {
-        return false;
-      }
-      return true;
-    }
-
-    @Override
-    @Generated("eclipse")
-    public int hashCode() {
-      final int prime = 31;
-      int result = 1;
-      result = (prime * result) + (int) (applicationId ^ (applicationId >>> 32));
-      result = (prime * result) + ((eventTypeName == null) ? 0 : eventTypeName.hashCode());
-      return result;
-    }
-
-  }
 
   private static final int SELECT_AUDIT_EVENT_TYPES_PAGE_SIZE = 50;
 
