@@ -16,13 +16,13 @@
 package org.everit.audit.ri;
 
 /**
- * Interface for managing {@link org.everit.osgi.audit.dto.AuditEventType}s belonging to audit
+ * Interface for managing {@link org.everit.audit.dto.AuditEventType}s belonging to audit
  * applications.
  */
 public interface InternalAuditEventTypeManager {
 
   /**
-   * Creates the {@link org.everit.osgi.audit.dto.AuditEventType}s by their names. If an event type
+   * Creates the {@link org.everit.audit.dto.AuditEventType}s by their names. If an event type
    * already exists, it will be skipped.
    *
    * @param applicationName
