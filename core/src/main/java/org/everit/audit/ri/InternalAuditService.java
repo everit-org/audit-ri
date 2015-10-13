@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.Generated;
+
 import org.everit.audit.dto.AuditEvent;
 import org.everit.audit.dto.AuditEventType;
 import org.everit.audit.dto.EventData;
@@ -72,6 +74,7 @@ public class InternalAuditService implements
     }
 
     @Override
+    @Generated("eclipse")
     public boolean equals(final Object obj) {
       if (this == obj) {
         return true;
@@ -97,6 +100,7 @@ public class InternalAuditService implements
     }
 
     @Override
+    @Generated("eclipse")
     public int hashCode() {
       final int prime = 31;
       int result = 1;
@@ -111,15 +115,13 @@ public class InternalAuditService implements
 
   private final Map<String, AuditApplication> auditApplicationCache;
 
-  private long auditApplicationTypeTargetResourceId;
+  private final long auditApplicationTypeTargetResourceId;
 
   private final Map<CachedEventTypeKey, AuditEventType> auditEventTypeCache;
 
   private final AuthnrPermissionChecker authnrPermissionChecker;
 
   private final AuthorizationManager authorizationManager;
-
-  private final PropertyManager propertyManager;
 
   private final QuerydslSupport querydslSupport;
 
@@ -131,21 +133,19 @@ public class InternalAuditService implements
    * Constructor.
    */
   public InternalAuditService(
-      final long auditApplicationTypeTargetResourceId,
       final Map<String, AuditApplication> auditApplicationCache,
       final Map<CachedEventTypeKey, AuditEventType> auditEventTypeCache,
       final AuditRequiredServices auditRequiredServices) {
     super();
     this.auditApplicationCache = auditApplicationCache;
-    this.auditApplicationTypeTargetResourceId = auditApplicationTypeTargetResourceId;
     this.auditEventTypeCache = auditEventTypeCache;
     authnrPermissionChecker = auditRequiredServices.authnrPermissionChecker;
     authorizationManager = auditRequiredServices.authorizationManager;
-    propertyManager = auditRequiredServices.propertyManager;
     querydslSupport = auditRequiredServices.querydslSupport;
     resourceService = auditRequiredServices.resourceService;
     transactionPropagator = auditRequiredServices.transactionPropagator;
-    init();
+    auditApplicationTypeTargetResourceId = initAuditApplicationTypeTargetResourceId(
+        auditRequiredServices.propertyManager);
   }
 
   private void addEventDataValue(
@@ -301,34 +301,6 @@ public class InternalAuditService implements
         auditApplication.resourceId, AuditRiPermissionConstants.LOG_TO_AUDIT_APPLICATION);
   }
 
-  /**
-   * Initializes the target resource ID used for the permission checks according to the audit
-   * application type.
-   */
-  private void init() {
-
-    transactionPropagator.required(() -> {
-
-      String auditApplicationTargetResourceIdString =
-          propertyManager
-              .getProperty(AuditRiPropertyConstants.AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID);
-
-      if (auditApplicationTargetResourceIdString == null) {
-
-        auditApplicationTypeTargetResourceId = resourceService.createResource();
-        propertyManager.addProperty(
-            AuditRiPropertyConstants.AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID,
-            String.valueOf(auditApplicationTypeTargetResourceId));
-
-      } else {
-        auditApplicationTypeTargetResourceId = Long
-            .parseLong(auditApplicationTargetResourceIdString);
-      }
-
-      return null;
-    });
-  }
-
   @Override
   public void initAuditApplication(final String applicationName) {
 
@@ -353,6 +325,36 @@ public class InternalAuditService implements
       cacheAuditApplication(auditApplication);
 
       return null;
+    });
+  }
+
+  /**
+   * Initializes the target resource ID used for the permission checks according to the audit
+   * application type.
+   */
+  private long initAuditApplicationTypeTargetResourceId(final PropertyManager propertyManager) {
+
+    return transactionPropagator.required(() -> {
+
+      long auditApplicationTypeTargetResourceId;
+
+      String auditApplicationTargetResourceIdString =
+          propertyManager
+              .getProperty(AuditRiPropertyConstants.AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID);
+
+      if (auditApplicationTargetResourceIdString == null) {
+
+        auditApplicationTypeTargetResourceId = resourceService.createResource();
+        propertyManager.addProperty(
+            AuditRiPropertyConstants.AUDIT_APPLICATION_TYPE_TARGET_RESOURCE_ID,
+            String.valueOf(auditApplicationTypeTargetResourceId));
+
+      } else {
+        auditApplicationTypeTargetResourceId = Long
+            .parseLong(auditApplicationTargetResourceIdString);
+      }
+
+      return auditApplicationTypeTargetResourceId;
     });
   }
 
