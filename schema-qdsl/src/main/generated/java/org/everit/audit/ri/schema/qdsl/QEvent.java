@@ -15,15 +15,16 @@
  */
 package org.everit.audit.ri.schema.qdsl;
 
-import static com.mysema.query.types.PathMetadataFactory.*;
+import static com.querydsl.core.types.PathMetadataFactory.*;
 
-import com.mysema.query.types.path.*;
+import com.querydsl.core.types.dsl.*;
 
-import com.mysema.query.types.PathMetadata;
+import com.querydsl.core.types.PathMetadata;
 import javax.annotation.Generated;
-import com.mysema.query.types.Path;
+import com.querydsl.core.types.Path;
 
-import com.mysema.query.sql.ColumnMetadata;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -31,8 +32,8 @@ import com.mysema.query.sql.ColumnMetadata;
 /**
  * QEvent is a Querydsl query type for QEvent
  */
-@Generated("com.mysema.query.sql.codegen.MetaDataSerializer")
-public class QEvent extends com.mysema.query.sql.RelationalPathBase<QEvent> {
+@Generated("com.querydsl.sql.codegen.MetaDataSerializer")
+public class QEvent extends com.querydsl.sql.RelationalPathBase<QEvent> {
 
     private static final long serialVersionUID = -1268724377;
 
@@ -40,15 +41,15 @@ public class QEvent extends com.mysema.query.sql.RelationalPathBase<QEvent> {
 
     public class PrimaryKeys {
 
-        public final com.mysema.query.sql.PrimaryKey<QEvent> auditEventPk = createPrimaryKey(eventId);
+        public final com.querydsl.sql.PrimaryKey<QEvent> auditEventPk = createPrimaryKey(eventId);
 
     }
 
     public class ForeignKeys {
 
-        public final com.mysema.query.sql.ForeignKey<QEventType> eventEventTypeIdFk = createForeignKey(eventTypeId, "event_type_id");
+        public final com.querydsl.sql.ForeignKey<QEventType> eventEventTypeIdFk = createForeignKey(eventTypeId, "event_type_id");
 
-        public final com.mysema.query.sql.ForeignKey<QEventData> _eventDataEventIdFk = createInvForeignKey(eventId, "event_id");
+        public final com.querydsl.sql.ForeignKey<QEventData> _eventDataEventIdFk = createInvForeignKey(eventId, "event_id");
 
     }
 
@@ -79,16 +80,16 @@ public class QEvent extends com.mysema.query.sql.RelationalPathBase<QEvent> {
         addMetadata();
     }
 
-    public QEvent(PathMetadata<?> metadata) {
+    public QEvent(PathMetadata metadata) {
         super(QEvent.class, metadata, "org.everit.audit.ri", "audit_event");
         addMetadata();
     }
 
     public void addMetadata() {
-        addMetadata(createdAt, ColumnMetadata.named("created_at").ofType(93).withSize(23).withDigits(10).notNull());
-        addMetadata(eventId, ColumnMetadata.named("event_id").ofType(-5).withSize(19).notNull());
-        addMetadata(eventTypeId, ColumnMetadata.named("event_type_id").ofType(-5).withSize(19).notNull());
-        addMetadata(occuredAt, ColumnMetadata.named("occured_at").ofType(93).withSize(23).withDigits(10).notNull());
+        addMetadata(createdAt, ColumnMetadata.named("created_at").withIndex(2).ofType(Types.TIMESTAMP).withSize(23).withDigits(10).notNull());
+        addMetadata(eventId, ColumnMetadata.named("event_id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(eventTypeId, ColumnMetadata.named("event_type_id").withIndex(4).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(occuredAt, ColumnMetadata.named("occured_at").withIndex(3).ofType(Types.TIMESTAMP).withSize(23).withDigits(10).notNull());
     }
 
 }

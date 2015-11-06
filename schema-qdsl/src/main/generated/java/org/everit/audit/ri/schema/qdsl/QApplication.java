@@ -15,15 +15,16 @@
  */
 package org.everit.audit.ri.schema.qdsl;
 
-import static com.mysema.query.types.PathMetadataFactory.*;
+import static com.querydsl.core.types.PathMetadataFactory.*;
 
-import com.mysema.query.types.path.*;
+import com.querydsl.core.types.dsl.*;
 
-import com.mysema.query.types.PathMetadata;
+import com.querydsl.core.types.PathMetadata;
 import javax.annotation.Generated;
-import com.mysema.query.types.Path;
+import com.querydsl.core.types.Path;
 
-import com.mysema.query.sql.ColumnMetadata;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -31,8 +32,8 @@ import com.mysema.query.sql.ColumnMetadata;
 /**
  * QApplication is a Querydsl query type for QApplication
  */
-@Generated("com.mysema.query.sql.codegen.MetaDataSerializer")
-public class QApplication extends com.mysema.query.sql.RelationalPathBase<QApplication> {
+@Generated("com.querydsl.sql.codegen.MetaDataSerializer")
+public class QApplication extends com.querydsl.sql.RelationalPathBase<QApplication> {
 
     private static final long serialVersionUID = 2096124509;
 
@@ -40,15 +41,13 @@ public class QApplication extends com.mysema.query.sql.RelationalPathBase<QAppli
 
     public class PrimaryKeys {
 
-        public final com.mysema.query.sql.PrimaryKey<QApplication> auditApplicationPk = createPrimaryKey(applicationId);
+        public final com.querydsl.sql.PrimaryKey<QApplication> auditApplicationPk = createPrimaryKey(applicationId);
 
     }
 
     public class ForeignKeys {
 
-        public final com.mysema.query.sql.ForeignKey<org.everit.resource.ri.schema.qdsl.QResource> applicationResourceIdFk = createForeignKey(resourceId, "resource_id");
-
-        public final com.mysema.query.sql.ForeignKey<QEventType> _eventTypeApplicationIdFk = createInvForeignKey(applicationId, "application_id");
+        public final com.querydsl.sql.ForeignKey<QEventType> _eventTypeApplicationIdFk = createInvForeignKey(applicationId, "application_id");
 
     }
 
@@ -77,15 +76,15 @@ public class QApplication extends com.mysema.query.sql.RelationalPathBase<QAppli
         addMetadata();
     }
 
-    public QApplication(PathMetadata<?> metadata) {
+    public QApplication(PathMetadata metadata) {
         super(QApplication.class, metadata, "org.everit.audit.ri", "audit_application");
         addMetadata();
     }
 
     public void addMetadata() {
-        addMetadata(applicationId, ColumnMetadata.named("application_id").ofType(-5).withSize(19).notNull());
-        addMetadata(applicationName, ColumnMetadata.named("application_name").ofType(12).withSize(255).notNull());
-        addMetadata(resourceId, ColumnMetadata.named("resource_id").ofType(-5).withSize(19).notNull());
+        addMetadata(applicationId, ColumnMetadata.named("application_id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(applicationName, ColumnMetadata.named("application_name").withIndex(2).ofType(Types.VARCHAR).withSize(255).notNull());
+        addMetadata(resourceId, ColumnMetadata.named("resource_id").withIndex(3).ofType(Types.BIGINT).withSize(19).notNull());
     }
 
 }

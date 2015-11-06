@@ -15,15 +15,16 @@
  */
 package org.everit.audit.ri.schema.qdsl;
 
-import static com.mysema.query.types.PathMetadataFactory.*;
+import static com.querydsl.core.types.PathMetadataFactory.*;
 
-import com.mysema.query.types.path.*;
+import com.querydsl.core.types.dsl.*;
 
-import com.mysema.query.types.PathMetadata;
+import com.querydsl.core.types.PathMetadata;
 import javax.annotation.Generated;
-import com.mysema.query.types.Path;
+import com.querydsl.core.types.Path;
 
-import com.mysema.query.sql.ColumnMetadata;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -31,8 +32,8 @@ import com.mysema.query.sql.ColumnMetadata;
 /**
  * QEventData is a Querydsl query type for QEventData
  */
-@Generated("com.mysema.query.sql.codegen.MetaDataSerializer")
-public class QEventData extends com.mysema.query.sql.RelationalPathBase<QEventData> {
+@Generated("com.querydsl.sql.codegen.MetaDataSerializer")
+public class QEventData extends com.querydsl.sql.RelationalPathBase<QEventData> {
 
     private static final long serialVersionUID = -755096143;
 
@@ -40,13 +41,13 @@ public class QEventData extends com.mysema.query.sql.RelationalPathBase<QEventDa
 
     public class PrimaryKeys {
 
-        public final com.mysema.query.sql.PrimaryKey<QEventData> auditEventDataPk = createPrimaryKey(eventDataId);
+        public final com.querydsl.sql.PrimaryKey<QEventData> auditEventDataPk = createPrimaryKey(eventDataId);
 
     }
 
     public class ForeignKeys {
 
-        public final com.mysema.query.sql.ForeignKey<QEvent> eventDataEventIdFk = createForeignKey(eventId, "event_id");
+        public final com.querydsl.sql.ForeignKey<QEvent> eventDataEventIdFk = createForeignKey(eventId, "event_id");
 
     }
 
@@ -85,20 +86,20 @@ public class QEventData extends com.mysema.query.sql.RelationalPathBase<QEventDa
         addMetadata();
     }
 
-    public QEventData(PathMetadata<?> metadata) {
+    public QEventData(PathMetadata metadata) {
         super(QEventData.class, metadata, "org.everit.audit.ri", "audit_event_data");
         addMetadata();
     }
 
     public void addMetadata() {
-        addMetadata(eventDataId, ColumnMetadata.named("event_data_id").ofType(-5).withSize(19).notNull());
-        addMetadata(eventDataName, ColumnMetadata.named("event_data_name").ofType(12).withSize(255).notNull());
-        addMetadata(eventDataType, ColumnMetadata.named("event_data_type").ofType(12).withSize(32).notNull());
-        addMetadata(eventId, ColumnMetadata.named("event_id").ofType(-5).withSize(19).notNull());
-        addMetadata(numberValue, ColumnMetadata.named("number_value").ofType(8).withSize(17));
-        addMetadata(stringValue, ColumnMetadata.named("string_value").ofType(12).withSize(2000));
-        addMetadata(textValue, ColumnMetadata.named("text_value").ofType(2005).withSize(2147483647));
-        addMetadata(timestampValue, ColumnMetadata.named("timestamp_value").ofType(93).withSize(23).withDigits(10));
+        addMetadata(eventDataId, ColumnMetadata.named("event_data_id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(eventDataName, ColumnMetadata.named("event_data_name").withIndex(3).ofType(Types.VARCHAR).withSize(255).notNull());
+        addMetadata(eventDataType, ColumnMetadata.named("event_data_type").withIndex(4).ofType(Types.VARCHAR).withSize(32).notNull());
+        addMetadata(eventId, ColumnMetadata.named("event_id").withIndex(2).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(numberValue, ColumnMetadata.named("number_value").withIndex(6).ofType(Types.DOUBLE).withSize(17));
+        addMetadata(stringValue, ColumnMetadata.named("string_value").withIndex(5).ofType(Types.VARCHAR).withSize(2000));
+        addMetadata(textValue, ColumnMetadata.named("text_value").withIndex(7).ofType(Types.CLOB).withSize(2147483647));
+        addMetadata(timestampValue, ColumnMetadata.named("timestamp_value").withIndex(8).ofType(Types.TIMESTAMP).withSize(23).withDigits(10));
     }
 
 }
