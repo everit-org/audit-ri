@@ -43,9 +43,9 @@ import org.everit.resource.ResourceService;
 import org.everit.resource.ri.schema.qdsl.QResource;
 import org.everit.transaction.propagator.TransactionPropagator;
 
-import com.mysema.query.sql.SQLQuery;
-import com.mysema.query.sql.dml.SQLInsertClause;
-import com.mysema.query.types.Projections;
+import com.querydsl.core.types.Projections;
+import com.querydsl.sql.SQLQuery;
+import com.querydsl.sql.dml.SQLInsertClause;
 
 /**
  * The internal implementation of the audit component.
@@ -472,7 +472,7 @@ public class InternalAuditService implements
   private void lockAuditApplication(final long applicationId) {
     querydslSupport.execute((connection, configuration) -> {
       QApplication qApplication = QApplication.application;
-      return new SQLQuery(connection, configuration)
+      return new SQLQuery<Void>(connection, configuration)
           .from(qApplication)
           .where(qApplication.applicationId.eq(applicationId))
           .forUpdate();
@@ -485,7 +485,7 @@ public class InternalAuditService implements
   private void lockAuditApplicationTypeTargetResourceId() {
     querydslSupport.execute((connection, configuration) -> {
       QResource qResource = QResource.resource;
-      return new SQLQuery(connection, configuration)
+      return new SQLQuery<Void>(connection, configuration)
           .from(qResource)
           .where(qResource.resourceId.eq(auditApplicationTypeTargetResourceId))
           .forUpdate();
@@ -549,13 +549,14 @@ public class InternalAuditService implements
 
       QApplication qApplication = QApplication.application;
 
-      return new SQLQuery(connection, configuration)
-          .from(qApplication)
-          .where(qApplication.applicationName.eq(applicationName))
-          .uniqueResult(Projections.fields(AuditApplication.class,
+      return new SQLQuery<AuditApplication>(connection, configuration)
+          .select(Projections.fields(AuditApplication.class,
               qApplication.applicationId,
               qApplication.applicationName,
-              qApplication.resourceId));
+              qApplication.resourceId))
+          .from(qApplication)
+          .where(qApplication.applicationName.eq(applicationName))
+          .fetchFirst();
     });
   }
 
@@ -581,15 +582,17 @@ public class InternalAuditService implements
         List<String> actualEventTypeNames = new ArrayList<>(eventTypeNames.subList(fromIndex,
             toIndex));
 
-        List<AuditEventType> auditEventTypes = new SQLQuery(connection, configuration)
-            .from(qEventType)
-            .innerJoin(qApplication).on(qEventType.applicationId.eq(qApplication.applicationId))
-            .where(qApplication.applicationName.eq(applicationName)
-                .and(qEventType.eventTypeName.in(actualEventTypeNames)))
-            .list(Projections.fields(AuditEventType.class,
-                qEventType.eventTypeId,
-                qEventType.eventTypeName,
-                qEventType.resourceId));
+        List<AuditEventType> auditEventTypes =
+            new SQLQuery<AuditEventType>(connection, configuration)
+                .select(Projections.fields(AuditEventType.class,
+                    qEventType.eventTypeId,
+                    qEventType.eventTypeName,
+                    qEventType.resourceId))
+                .from(qEventType)
+                .innerJoin(qApplication).on(qEventType.applicationId.eq(qApplication.applicationId))
+                .where(qApplication.applicationName.eq(applicationName)
+                    .and(qEventType.eventTypeName.in(actualEventTypeNames)))
+                .fetch();
         rval.addAll(auditEventTypes);
       }
 
