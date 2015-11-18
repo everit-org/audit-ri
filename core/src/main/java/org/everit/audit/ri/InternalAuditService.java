@@ -473,6 +473,7 @@ public class InternalAuditService implements
     querydslSupport.execute((connection, configuration) -> {
       QApplication qApplication = QApplication.application;
       return new SQLQuery<Void>(connection, configuration)
+          .select(qApplication.applicationId)
           .from(qApplication)
           .where(qApplication.applicationId.eq(applicationId))
           .forUpdate();
@@ -486,6 +487,7 @@ public class InternalAuditService implements
     querydslSupport.execute((connection, configuration) -> {
       QResource qResource = QResource.resource;
       return new SQLQuery<Void>(connection, configuration)
+          .select(qResource.resourceId)
           .from(qResource)
           .where(qResource.resourceId.eq(auditApplicationTypeTargetResourceId))
           .forUpdate();
