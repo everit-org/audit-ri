@@ -558,7 +558,7 @@ public class InternalAuditService implements
               qApplication.resourceId))
           .from(qApplication)
           .where(qApplication.applicationName.eq(applicationName))
-          .fetchFirst();
+          .fetchOne();
     });
   }
 
