@@ -472,7 +472,7 @@ public class InternalAuditService implements
   private void lockAuditApplication(final long applicationId) {
     querydslSupport.execute((connection, configuration) -> {
       QApplication qApplication = QApplication.application;
-      return new SQLQuery<Void>(connection, configuration)
+      return new SQLQuery<>(connection, configuration)
           .select(qApplication.applicationId)
           .from(qApplication)
           .where(qApplication.applicationId.eq(applicationId))
@@ -486,7 +486,7 @@ public class InternalAuditService implements
   private void lockAuditApplicationTypeTargetResourceId() {
     querydslSupport.execute((connection, configuration) -> {
       QResource qResource = QResource.resource;
-      return new SQLQuery<Void>(connection, configuration)
+      return new SQLQuery<>(connection, configuration)
           .select(qResource.resourceId)
           .from(qResource)
           .where(qResource.resourceId.eq(auditApplicationTypeTargetResourceId))
